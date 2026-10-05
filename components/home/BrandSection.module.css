@@ -1,12 +1,16 @@
 .brandWord {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 20px;
+
   display: flex;
+
   transform: translateX(-50%);
+
   white-space: nowrap;
   pointer-events: none;
-  font-size: 21vw;
+
+  font-size: 20vw;
   font-weight: 900;
   line-height: 0.8;
   letter-spacing: -0.065em;
@@ -60,7 +64,8 @@
 
 @media (min-width: 768px) {
   .brandWord {
-    font-size: clamp(120px, 18vw, 300px);
+    bottom: 24px;
+    font-size: clamp(110px, 14.5vw, 200px);
   }
 
   .brandWord span {

@@ -32,7 +32,7 @@ export default function BrandSection() {
     >
       <div className="pointer-events-none absolute -right-50 -top-50 size-150 rounded-full bg-[#235bfa18] blur-3xl" />
 
-      <Container className="relative z-10 py-14 sm:py-16 md:py-25 2xl:py-30">
+      <Container className="relative z-10 pt-14 pb-28 sm:pt-16 sm:pb-32 md:pt-20 md:pb-44 xl:pb-48">
         <div className="grid gap-10 md:grid-cols-[1fr_0.9fr] md:gap-16 xl:grid-cols-[1.05fr_0.85fr] xl:gap-24">
           <div>
             <div className="flex items-center gap-2.5 text-[9px] font-bold tracking-[1.5px] text-[#7394ff] md:gap-3 md:text-[10px] md:tracking-[1.7px]">
@@ -47,7 +47,7 @@ export default function BrandSection() {
             </h2>
           </div>
 
-          <div className="flex flex-col justify-between md:mt-3 md:w-full md:max-w-100 md:justify-self-center xl:mt-4 xl:max-w-120">
+          <div className="flex flex-col justify-between md:-mt-2 md:w-full md:max-w-100 md:justify-self-center xl:-mt-3 xl:max-w-110">
             <div>
               <p className="max-w-120 text-[18px] font-medium leading-[1.4] tracking-[-0.35px] text-white sm:text-[20px] md:text-[20px] 2xl:text-[22px]">
                 La tech devrait vous simplifier la vie.
