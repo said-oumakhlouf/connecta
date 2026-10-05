@@ -10,6 +10,8 @@ const MOMENTS = [
     text: 'Un format discret qui reste avec vous au bureau.',
     image: '/images/hoco_work.jpg',
     featured: true,
+    mobilePosition: 'object-[68%_center]',
+    desktopPosition: 'md:object-center',
     delay: '0.05s',
   },
   {
@@ -18,6 +20,8 @@ const MOMENTS = [
     text: 'Sur votre bureau, dans votre poche, toujours prêts.',
     image: '/images/hoco_style.jpg',
     featured: false,
+    mobilePosition: 'object-center',
+    desktopPosition: 'md:object-center',
     delay: '0.22s',
   },
   {
@@ -26,6 +30,8 @@ const MOMENTS = [
     text: 'Vos morceaux préférés vous accompagnent jusqu’au dernier effort.',
     image: '/images/hoco_sport.jpg',
     featured: false,
+    mobilePosition: 'object-[55%_center]',
+    desktopPosition: 'md:object-center',
     delay: '0.39s',
   },
 ] as const;
@@ -57,23 +63,23 @@ export default function LifestyleSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="pb-16.25 pt-2.5 md:pb-25 md:pt-7.5">
+    <section ref={sectionRef} className="pb-16 pt-2 md:pb-25 md:pt-7.5">
       <div className="mx-auto w-full max-w-310 px-5.5 md:px-12 xl:max-w-335 2xl:max-w-375 2xl:px-16">
         {/* HEADING */}
-        <div className="mb-6.25 block md:mb-8.75 md:flex md:items-end md:justify-between md:gap-6.25">
+        <div className="mb-7 md:mb-8.75 md:flex md:items-end md:justify-between md:gap-6.25">
           <div>
             <span className="text-[9px] font-bold tracking-[1.2px] text-[#747983] md:text-[10px] md:tracking-[1.6px] 2xl:text-[11px]">
               DANS VOTRE QUOTIDIEN
             </span>
 
-            <h2 className="mt-3.75 text-[30px] font-medium leading-[1.17] tracking-[-1.2px] md:text-[38px] md:tracking-[-1.7px] 2xl:text-[46px]">
+            <h2 className="mt-3.5 text-[32px] font-medium leading-[1.08] tracking-[-1.4px] md:text-[38px] md:tracking-[-1.7px] 2xl:text-[46px]">
               Du matin au soir.
               <br />
               Toujours avec vous.
             </h2>
           </div>
 
-          <p className="mt-4.25 text-[11px] leading-[1.8] text-[#72767f] md:mb-0.75 md:mt-0 md:text-xs 2xl:text-sm">
+          <p className="mt-4 text-[12px] leading-[1.75] text-[#72767f] md:mb-0.75 md:mt-0 md:text-xs 2xl:text-sm">
             Les écouteurs qu&apos;on oublie.
             <br />
             Jusqu&apos;au moment où on en a besoin.
@@ -81,7 +87,7 @@ export default function LifestyleSection() {
         </div>
 
         {/* IMAGES */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_0.85fr] md:grid-rows-[repeat(2,300px)] md:gap-4.5 2xl:grid-rows-[repeat(2,350px)]">
+        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-[1.35fr_0.85fr] md:grid-rows-[repeat(2,300px)] md:gap-4.5 2xl:grid-rows-[repeat(2,350px)]">
           {MOMENTS.map((moment) => (
             <article
               key={moment.time}
@@ -89,7 +95,7 @@ export default function LifestyleSection() {
                 transitionDelay: isVisible ? moment.delay : '0s',
               }}
               className={`
-                group relative overflow-hidden rounded-2xl bg-[#111]
+                group relative overflow-hidden rounded-[18px] bg-[#111]
                 transition-[opacity,transform] duration-750
                 ease-[cubic-bezier(0.22,1,0.36,1)]
                 motion-reduce:translate-y-0
@@ -104,8 +110,8 @@ export default function LifestyleSection() {
 
                 ${
                   moment.featured
-                    ? 'h-107.5 md:row-span-2 md:h-auto'
-                    : 'h-70 md:h-auto'
+                    ? 'h-100 sm:h-110 md:row-span-2 md:h-auto'
+                    : 'h-66 sm:h-72 md:h-auto'
                 }
               `}
             >
@@ -115,30 +121,30 @@ export default function LifestyleSection() {
                 fill
                 sizes={
                   moment.featured
-                    ? '(max-width: 700px) 100vw, 65vw'
-                    : '(max-width: 700px) 100vw, 35vw'
+                    ? '(max-width: 767px) 100vw, 65vw'
+                    : '(max-width: 767px) 100vw, 35vw'
                 }
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035] motion-reduce:transform-none motion-reduce:transition-none"
+                className={`object-cover ${moment.mobilePosition} ${moment.desktopPosition} transition-transform duration-700 ease-out group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none`}
               />
 
-              <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000010_15%,#00000008_42%,#000000b8_100%)]" />
+              <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000008_15%,#00000008_42%,#000000c2_100%)]" />
 
-              <div className="absolute left-6 top-6 z-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.75 text-[10px] font-semibold tracking-[1px] text-white backdrop-blur-xl md:left-7.5 md:top-7 2xl:left-9.5 2xl:top-9">
+              <div className="absolute left-5 top-5 z-2 rounded-full border border-white/20 bg-black/15 px-2.5 py-1.5 text-[10px] font-semibold tracking-[0.8px] text-white backdrop-blur-xl md:left-7.5 md:top-7 2xl:left-9.5 2xl:top-9">
                 {moment.time}
               </div>
 
-              <div className="absolute bottom-6 left-6 right-6 z-2 text-white md:bottom-7.5 md:left-7.5 md:right-7.5 2xl:bottom-9.5 2xl:left-9.5 2xl:right-9.5">
+              <div className="absolute bottom-5 left-5 right-5 z-2 text-white md:bottom-7.5 md:left-7.5 md:right-7.5 2xl:bottom-9.5 2xl:left-9.5 2xl:right-9.5">
                 <h3
                   className={
                     moment.featured
-                      ? 'mb-2.5 max-w-125 text-[26px] font-medium tracking-[-1px] md:text-[38px] md:tracking-[-1.8px] 2xl:text-[46px]'
-                      : 'mb-2.5 text-[26px] font-medium tracking-[-1px] md:text-[25px] 2xl:text-[30px]'
+                      ? 'mb-2 max-w-125 text-[25px] font-medium leading-[1.05] tracking-[-1px] md:text-[38px] md:tracking-[-1.8px] 2xl:text-[46px]'
+                      : 'mb-2 text-[22px] font-medium leading-[1.08] tracking-[-0.8px] md:text-[25px] 2xl:text-[30px]'
                   }
                 >
                   {moment.title}
                 </h3>
 
-                <p className="m-0 max-w-85 text-[11px] leading-[1.7] text-white/75 md:text-xs 2xl:text-sm">
+                <p className="m-0 max-w-85 text-[11px] leading-[1.65] text-white/80 md:text-xs 2xl:text-sm">
                   {moment.text}
                 </p>
               </div>
