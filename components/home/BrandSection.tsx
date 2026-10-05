@@ -1,8 +1,8 @@
 import { ArrowUpRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
 
 import Container from '@/components/layout/Container';
 import { SITE } from '@/data/site';
-import type { CSSProperties } from 'react';
 
 import styles from './BrandSection.module.css';
 
@@ -30,68 +30,64 @@ export default function BrandSection() {
       id="brand"
       className="relative overflow-hidden bg-[#171a21] text-white"
     >
-      {/* LUMIÈRE */}
       <div className="pointer-events-none absolute -right-50 -top-50 size-150 rounded-full bg-[#235bfa18] blur-3xl" />
 
-      <Container className="relative z-10 py-18 md:py-25 2xl:py-30">
-        <div className="grid gap-14 md:grid-cols-[0.9fr_1.1fr] md:gap-20 xl:gap-30">
-          {/* GAUCHE */}
+      <Container className="relative z-10 py-14 sm:py-16 md:py-25 2xl:py-30">
+        <div className="grid gap-10 md:grid-cols-[0.9fr_1.1fr] md:gap-20 xl:gap-30">
           <div>
-            <div className="flex items-center gap-3 text-[9px] font-bold tracking-[1.7px] text-[#7394ff] md:text-[10px]">
-              <span className="h-px w-7 bg-[#235bfa]" />
+            <div className="flex items-center gap-2.5 text-[9px] font-bold tracking-[1.5px] text-[#7394ff] md:gap-3 md:text-[10px] md:tracking-[1.7px]">
+              <span className="h-px w-5 bg-[#235bfa] md:w-7" />
               L’ESPRIT {SITE.name}
             </div>
 
-            <h2 className="mt-6 max-w-130 text-[40px] font-medium leading-[1.03] tracking-[-2px] md:text-[54px] md:tracking-[-3px] 2xl:text-[64px]">
+            <h2 className="mt-5 max-w-130 text-[34px] font-medium leading-[1.04] tracking-[-1.7px] sm:text-[38px] md:mt-6 md:text-[54px] md:tracking-[-3px] 2xl:text-[64px]">
               Bien connecté.
               <br />
               Bien dans votre vie.
             </h2>
           </div>
 
-          {/* DROITE */}
           <div className="flex flex-col justify-between">
             <div>
-              <p className="max-w-140 text-[20px] font-medium leading-[1.45] tracking-[-0.5px] text-white md:text-[24px] 2xl:text-[27px]">
+              <p className="max-w-140 text-[18px] font-medium leading-[1.4] tracking-[-0.4px] text-white sm:text-[20px] md:text-[24px] 2xl:text-[27px]">
                 La tech devrait vous simplifier la vie.
-                <br />
+                <br className="hidden sm:block" />
                 Pas la compliquer.
               </p>
 
-              <p className="mt-6 max-w-135 text-[13px] leading-[1.9] text-[#969da8] md:text-[14px] 2xl:text-[15px]">
+              <p className="mt-4 max-w-135 text-[12px] leading-[1.75] text-[#a1a7b1] sm:text-[13px] md:mt-6 md:text-[14px] md:leading-[1.9] 2xl:text-[15px]">
                 Chez {SITE.name}, on choisit des produits pensés pour le
                 quotidien : utiles, simples et accessibles. Parce que la
                 technologie n’a pas besoin d’être compliquée pour être pratique.
               </p>
             </div>
 
-            <div className="mt-12 grid gap-8 border-t border-white/10 pt-8 sm:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-6 border-t border-white/10 pt-7 sm:grid-cols-3 md:mt-12 md:gap-8 md:pt-8">
               {PRINCIPLES.map(({ number, title, text }) => (
                 <div key={number}>
-                  <span className="text-[10px] font-bold tracking-[1.5px] text-[#6f7890]">
+                  <span className="text-[9px] font-bold tracking-[1.4px] text-[#778198] md:text-[10px] md:tracking-[1.5px]">
                     {number}
                   </span>
 
-                  <strong className="mt-3 block text-[17px] font-semibold md:text-[18px]">
+                  <strong className="mt-2 block text-[16px] font-semibold md:mt-3 md:text-[18px]">
                     {title}
                   </strong>
 
-                  <p className="mt-3 max-w-45 text-[12px] leading-[1.7] text-[#8f96a2] md:text-[13px]">
+                  <p className="mt-2 max-w-55 text-[11px] leading-[1.65] text-[#9aa1ad] md:mt-3 md:max-w-45 md:text-[13px] md:leading-[1.7]">
                     {text}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-12 flex items-center gap-3 text-[11px] font-bold tracking-[1.4px] text-white">
+            <div className="mt-8 flex items-center gap-3 text-[10px] font-bold tracking-[1.3px] text-white md:mt-12 md:text-[11px] md:tracking-[1.4px]">
               KEEP IT CONNECTED.
-              <ArrowUpRight size={16} className="text-[#7394ff]" />
+              <ArrowUpRight size={15} className="text-[#7394ff]" />
             </div>
           </div>
         </div>
       </Container>
 
-      {/* MOT GÉANT EN FOND */}
       <div aria-hidden="true" className={styles.brandWord}>
         {SITE.name.split('').map((letter, index) => (
           <span
