@@ -11,8 +11,7 @@ const MOMENTS = [
     title: 'Quand il faut se concentrer.',
     text: 'Un format discret qui reste avec vous au bureau.',
     image: '/images/hoco_work.jpg',
-    mobilePosition: '68% center',
-    desktopPosition: 'center center',
+    imageClassName: 'object-[68%_center] md:object-center',
     featured: true,
     delay: '0.05s',
   },
@@ -21,8 +20,7 @@ const MOMENTS = [
     title: 'Toujours à portée de main.',
     text: 'Sur votre bureau, dans votre poche, toujours prêts.',
     image: '/images/hoco_style.jpg',
-    mobilePosition: '52% center',
-    desktopPosition: 'center center',
+    imageClassName: 'object-[52%_center] md:object-center',
     featured: false,
     delay: '0.22s',
   },
@@ -31,8 +29,7 @@ const MOMENTS = [
     title: 'Pendant la séance.',
     text: 'Vos morceaux préférés vous accompagnent jusqu’au dernier effort.',
     image: '/images/hoco_sport.jpg',
-    mobilePosition: '55% center',
-    desktopPosition: 'center center',
+    imageClassName: 'object-[55%_center] md:object-center',
     featured: false,
     delay: '0.39s',
   },
@@ -127,10 +124,7 @@ export default function LifestyleSection() {
                     ? '(max-width: 767px) 100vw, 65vw'
                     : '(max-width: 767px) 100vw, 35vw'
                 }
-                style={{
-                  objectPosition: moment.mobilePosition,
-                }}
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none md:[object-position:center_center]"
+                className={`object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none ${moment.imageClassName}`}
               />
 
               <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000008_10%,#00000008_38%,#000000c2_100%)]" />
