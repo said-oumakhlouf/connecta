@@ -1,0 +1,97 @@
+.mark {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+
+  width: 28px;
+  height: 28px;
+
+  color: #235bfa;
+}
+
+.arrow {
+  position: relative;
+  z-index: 2;
+
+  font-size: 28px;
+  line-height: 1;
+
+  animation: arrowPulse 3.2s ease-in-out infinite;
+}
+
+.signal {
+  position: absolute;
+
+  width: 12px;
+  height: 12px;
+
+  top: 0;
+  right: -1px;
+
+  border: 1.5px solid currentColor;
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  transform: scale(0.4);
+  transform-origin: bottom left;
+}
+
+.signalOne {
+  animation: signalWave 3.2s ease-out infinite;
+}
+
+.signalTwo {
+  animation: signalWave 3.2s 0.18s ease-out infinite;
+}
+
+@keyframes signalWave {
+  0%,
+  58% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+
+  64% {
+    opacity: 0.75;
+  }
+
+  78% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes arrowPulse {
+  0%,
+  55%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  62% {
+    transform: translate(1px, -1px);
+  }
+
+  70% {
+    transform: translate(0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow,
+  .signal {
+    animation: none;
+  }
+
+  .signal {
+    display: none;
+  }
+}

@@ -1,0 +1,420 @@
+.productVisual {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  isolation: isolate;
+}
+
+.productHalo {
+  position: absolute;
+  top: 20%;
+  left: 15%;
+
+  width: 70%;
+  height: 65%;
+
+  background:
+    radial-gradient(
+      ellipse,
+      #ffffffd9,
+      transparent 68%
+    );
+
+  border-radius: 50%;
+}
+
+
+/* =========================================================
+   CASE
+   ========================================================= */
+
+.case {
+  position: absolute;
+  top: 53%;
+  left: 50%;
+  z-index: 3;
+
+  width: 230px;
+  height: 175px;
+
+  overflow: hidden;
+
+  transform:
+    translateX(-50%)
+    rotate(-9deg);
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff 0%,
+      #fdfdfd 28%,
+      #eef0f3 65%,
+      #d4d7dc
+    );
+
+  border-radius: 54px 54px 64px 64px;
+
+  box-shadow:
+    inset 4px 3px 8px #fff,
+    inset -5px -6px 12px #b8bec455,
+    12px 25px 32px #70798730;
+}
+
+.case::after {
+  content: '';
+
+  position: absolute;
+  inset: 0;
+
+  border: 1px solid #fff;
+  border-radius: inherit;
+}
+
+.caseSeam {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  left: 0;
+
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #bac0ca33,
+      #aeb5bd9c,
+      #fff
+    );
+
+  box-shadow: 0 2px 3px #fff;
+}
+
+.case > i {
+  position: absolute;
+  top: 116px;
+  left: 50%;
+
+  width: 5px;
+  height: 3px;
+
+  background: #7dcb85;
+
+  border-radius: 5px;
+}
+
+
+/* =========================================================
+   EARBUDS
+   ========================================================= */
+
+.earbud {
+  position: absolute;
+  top: 27%;
+  left: 34%;
+  z-index: 4;
+
+  width: 65px;
+  height: 132px;
+
+  transform: rotate(-23deg);
+
+  filter:
+    drop-shadow(
+      7px
+      12px
+      9px
+      #6974832a
+    );
+}
+
+.budLeft {
+  left: 34%;
+}
+
+.budRight {
+  top: 25%;
+  left: 59%;
+
+  transform:
+    rotate(22deg)
+    scaleX(-1);
+}
+
+.budHead {
+  position: absolute;
+  z-index: 2;
+
+  width: 69px;
+  height: 57px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff,
+      #f8f9fb 55%,
+      #d6dbe1
+    );
+
+  border-radius:
+    50%
+    45%
+    50%
+    40%;
+
+  box-shadow:
+    inset
+    2px
+    3px
+    5px
+    #fff;
+}
+
+.budHead i {
+  position: absolute;
+  top: 11px;
+  left: 5px;
+
+  width: 17px;
+  height: 25px;
+
+  transform: rotate(12deg);
+
+  background:
+    linear-gradient(
+      90deg,
+      #30343a,
+      #121315
+    );
+
+  border: 3px solid #dde0e4;
+  border-radius: 50%;
+}
+
+.budHead span {
+  position: absolute;
+  top: 15px;
+  right: 9px;
+
+  width: 7px;
+  height: 16px;
+
+  background: #24282c;
+
+  border: 2px solid #dce0e5;
+  border-radius: 5px;
+}
+
+.budStem {
+  position: absolute;
+  top: 30px;
+  left: 39px;
+
+  width: 23px;
+  height: 99px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #dfe4e9,
+      #fff 48%,
+      #e0e5eb
+    );
+
+  border-radius:
+    12px
+    10px
+    9px
+    9px;
+
+  box-shadow:
+    inset
+    -1px
+    -3px
+    3px
+    #adb5bf;
+}
+
+.budStem i {
+  position: absolute;
+  bottom: 7px;
+  left: 6px;
+
+  width: 11px;
+  height: 4px;
+
+  background: #adb4bd;
+
+  border-radius: 50%;
+}
+
+.productShadow {
+  position: absolute;
+  top: 84%;
+  left: 25%;
+  z-index: 0;
+
+  width: 53%;
+  height: 18px;
+
+  background: #65717c28;
+
+  border-radius: 50%;
+
+  filter: blur(12px);
+}
+
+
+/* =========================================================
+   DUO
+   ========================================================= */
+
+.duo .earbud {
+  display: none;
+}
+
+.duo .case {
+  top: 38%;
+  left: 61%;
+
+  width: 141px;
+  height: 108px;
+
+  transform:
+    translateX(-50%)
+    rotate(12deg);
+}
+
+.duo .secondCase {
+  top: 23%;
+  left: 37%;
+  z-index: 2;
+
+  transform:
+    translateX(-50%)
+    rotate(-15deg);
+}
+
+.duo .case > i {
+  top: 76px;
+}
+
+
+/* =========================================================
+   COMPACT / GALLERY
+   ========================================================= */
+
+.compact .case {
+  top: 32%;
+
+  width: 166px;
+  height: 127px;
+
+  border-radius:
+    38px
+    38px
+    47px
+    47px;
+}
+
+.compact .caseSeam {
+  top: 30px;
+}
+
+.compact .case > i {
+  top: 87px;
+}
+
+.compact .earbud {
+  top: 26%;
+  left: 26%;
+
+  transform:
+    scale(0.9)
+    rotate(-23deg);
+}
+
+.compact .budRight {
+  left: 55%;
+
+  transform:
+    scale(0.9)
+    rotate(23deg)
+    scaleX(-1);
+}
+
+
+/* Compact Duo */
+
+.compact.duo .case {
+  top: 38%;
+  left: 61%;
+
+  width: 141px;
+  height: 108px;
+
+  transform:
+    translateX(-50%)
+    rotate(12deg);
+}
+
+.compact.duo .secondCase {
+  top: 23%;
+  left: 37%;
+
+  transform:
+    translateX(-50%)
+    rotate(-15deg);
+}
+
+.compact.duo .case > i {
+  top: 76px;
+}
+
+
+/* =========================================================
+   MOBILE COMPACT
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .compact .case {
+    width: 140px;
+    height: 108px;
+  }
+
+  .compact .case > i {
+    top: 76px;
+  }
+
+  .compact .earbud {
+    top: 20%;
+    left: 10%;
+
+    transform:
+      scale(0.72)
+      rotate(-23deg);
+  }
+
+  .compact .budRight {
+    left: 52%;
+
+    transform:
+      scale(0.72)
+      rotate(23deg)
+      scaleX(-1);
+  }
+
+  .compact.duo .case {
+    width: 105px;
+    height: 81px;
+  }
+
+  .compact.duo .caseSeam {
+    top: 21px;
+  }
+
+  .compact.duo .case > i {
+    top: 58px;
+  }
+}

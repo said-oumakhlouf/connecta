@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+:root {
+  --blue: #235bfa;
+  --ink: #17191d;
+  --muted: #72767f;
+  --line: #e9eaed;
+  --panel: #f6f7f9;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
+
+body {
+  margin: 0;
+
+  background: #fff;
+  color: var(--ink);
+
+  font-family:
+    var(--font-manrope),
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #90aeff;
+  outline-offset: 5px;
+}
+
+#produit,
+#connecta,
+#offres,
+#faq,
+#questions {
+  scroll-margin-top: 110px;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
