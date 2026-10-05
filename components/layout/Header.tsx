@@ -3,9 +3,9 @@
 import { Menu, ShoppingBag, X } from 'lucide-react';
 import { useState } from 'react';
 
-import { useShop } from '@/components/shop/ShopProvider';
 import Container from '@/components/layout/Container';
 import Logo from '@/components/layout/Logo';
+import { useShop } from '@/components/shop/ShopProvider';
 import { SITE } from '@/data/site';
 
 const NAVIGATION = [
@@ -29,11 +29,11 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#e9eaed] bg-white/95 backdrop-blur-xl">
-      <Container className="flex h-17 items-center md:h-21.5">
+      <Container className="flex h-15 items-center sm:h-17 md:h-18 lg:h-21.5">
         <Logo />
 
         <nav
-          className="mx-auto hidden items-center gap-9 text-xs text-[#656a72] md:flex"
+          className="mx-auto hidden items-center gap-9 text-xs text-[#656a72] lg:flex"
           aria-label="Navigation principale"
         >
           {NAVIGATION.map(({ href, label }) => (
@@ -47,29 +47,31 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-5 md:ml-0">
+        <div className="ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0 lg:gap-5">
           <button
             type="button"
             onClick={openCart}
-            className="flex items-center gap-2 border-0 bg-transparent"
-            aria-label="Ouvrir le panier"
+            className="relative grid size-9 place-items-center rounded-full bg-transparent transition hover:bg-[#f5f6f8]"
+            aria-label={`Ouvrir le panier, ${cartCount} article${cartCount > 1 ? 's' : ''}`}
           >
-            <ShoppingBag size={20} strokeWidth={1.7} />
+            <ShoppingBag size={19} strokeWidth={1.7} />
 
-            <span className="grid size-5 place-items-center rounded-full bg-[#f1f3f6] text-[10px]">
-              {cartCount}
-            </span>
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#235bfa] px-1 text-[8px] font-bold leading-none text-white">
+                {cartCount}
+              </span>
+            )}
           </button>
 
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="grid place-items-center border-0 bg-transparent md:hidden"
+            className="grid size-9 place-items-center rounded-full bg-transparent transition hover:bg-[#f5f6f8] lg:hidden"
             aria-label="Menu"
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
           >
-            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </Container>
@@ -77,7 +79,7 @@ export default function Header() {
       {menuOpen && (
         <nav
           id="mobile-navigation"
-          className="flex flex-col border-t border-[#e9eaed] bg-white px-5.5 pb-4 md:hidden"
+          className="flex flex-col border-t border-[#e9eaed] bg-white px-4 pb-3 sm:px-5.5 lg:hidden"
           aria-label="Navigation mobile"
         >
           {NAVIGATION.map(({ href, label }) => (
@@ -85,7 +87,7 @@ export default function Header() {
               key={href}
               href={href}
               onClick={() => setMenuOpen(false)}
-              className="border-b border-[#f0f1f3] py-4 text-xs text-[#656a72] last:border-b-0"
+              className="border-b border-[#f0f1f3] py-4 text-[13px] text-[#565c65] last:border-b-0"
             >
               {label === 'Questions fréquentes' ? 'FAQ' : label}
             </a>
