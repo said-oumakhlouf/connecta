@@ -3,12 +3,16 @@
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 
+import Container from '@/components/layout/Container';
+
 const MOMENTS = [
   {
     time: '10:15',
     title: 'Quand il faut se concentrer.',
     text: 'Un format discret qui reste avec vous au bureau.',
     image: '/images/hoco_work.jpg',
+    mobilePosition: '68% center',
+    desktopPosition: 'center center',
     featured: true,
     delay: '0.05s',
   },
@@ -17,6 +21,8 @@ const MOMENTS = [
     title: 'Toujours à portée de main.',
     text: 'Sur votre bureau, dans votre poche, toujours prêts.',
     image: '/images/hoco_style.jpg',
+    mobilePosition: '52% center',
+    desktopPosition: 'center center',
     featured: false,
     delay: '0.22s',
   },
@@ -25,6 +31,8 @@ const MOMENTS = [
     title: 'Pendant la séance.',
     text: 'Vos morceaux préférés vous accompagnent jusqu’au dernier effort.',
     image: '/images/hoco_sport.jpg',
+    mobilePosition: '55% center',
+    desktopPosition: 'center center',
     featured: false,
     delay: '0.39s',
   },
@@ -57,23 +65,23 @@ export default function LifestyleSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="pb-16.25 pt-2.5 md:pb-25 md:pt-7.5">
-      <div className="mx-auto w-full max-w-310 px-5.5 md:px-12 xl:max-w-335 2xl:max-w-375 2xl:px-16">
+    <section ref={sectionRef} className="pb-14 pt-4 md:pb-25 md:pt-7.5">
+      <Container>
         {/* HEADING */}
-        <div className="mb-6.25 block md:mb-8.75 md:flex md:items-end md:justify-between md:gap-6.25">
+        <div className="mb-6 md:mb-8.75 md:flex md:items-end md:justify-between md:gap-6.25">
           <div>
             <span className="text-[9px] font-bold tracking-[1.2px] text-[#747983] md:text-[10px] md:tracking-[1.6px] 2xl:text-[11px]">
               DANS VOTRE QUOTIDIEN
             </span>
 
-            <h2 className="mt-3.75 text-[30px] font-medium leading-[1.17] tracking-[-1.2px] md:text-[38px] md:tracking-[-1.7px] 2xl:text-[46px]">
+            <h2 className="mt-3 text-[30px] font-medium leading-[1.12] tracking-[-1.3px] sm:text-[34px] md:mt-3.75 md:text-[38px] md:tracking-[-1.7px] 2xl:text-[46px]">
               Du matin au soir.
               <br />
               Toujours avec vous.
             </h2>
           </div>
 
-          <p className="mt-4.25 text-[11px] leading-[1.8] text-[#72767f] md:mb-0.75 md:mt-0 md:text-xs 2xl:text-sm">
+          <p className="mt-4 max-w-80 text-[11px] leading-[1.75] text-[#72767f] md:mb-0.75 md:mt-0 md:text-xs 2xl:text-sm">
             Les écouteurs qu&apos;on oublie.
             <br />
             Jusqu&apos;au moment où on en a besoin.
@@ -89,12 +97,13 @@ export default function LifestyleSection() {
                 transitionDelay: isVisible ? moment.delay : '0s',
               }}
               className={`
-                group relative overflow-hidden rounded-2xl bg-[#111]
+                group relative overflow-hidden rounded-[14px] bg-[#111]
                 transition-[opacity,transform] duration-750
                 ease-[cubic-bezier(0.22,1,0.36,1)]
                 motion-reduce:translate-y-0
                 motion-reduce:opacity-100
                 motion-reduce:transition-none
+                md:rounded-2xl
 
                 ${
                   isVisible
@@ -104,8 +113,8 @@ export default function LifestyleSection() {
 
                 ${
                   moment.featured
-                    ? 'h-107.5 md:row-span-2 md:h-auto'
-                    : 'h-70 md:h-auto'
+                    ? 'h-92 sm:h-105 md:row-span-2 md:h-auto'
+                    : 'h-62 sm:h-70 md:h-auto'
                 }
               `}
             >
@@ -115,37 +124,40 @@ export default function LifestyleSection() {
                 fill
                 sizes={
                   moment.featured
-                    ? '(max-width: 700px) 100vw, 65vw'
-                    : '(max-width: 700px) 100vw, 35vw'
+                    ? '(max-width: 767px) 100vw, 65vw'
+                    : '(max-width: 767px) 100vw, 35vw'
                 }
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035] motion-reduce:transform-none motion-reduce:transition-none"
+                style={{
+                  objectPosition: moment.mobilePosition,
+                }}
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none md:[object-position:center_center]"
               />
 
-              <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000010_15%,#00000008_42%,#000000b8_100%)]" />
+              <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000008_10%,#00000008_38%,#000000c2_100%)]" />
 
-              <div className="absolute left-6 top-6 z-2 rounded-full border border-white/15 bg-white/10 px-2.5 py-1.75 text-[10px] font-semibold tracking-[1px] text-white backdrop-blur-xl md:left-7.5 md:top-7 2xl:left-9.5 2xl:top-9">
+              <div className="absolute left-4 top-4 z-2 rounded-full border border-white/20 bg-black/15 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.8px] text-white backdrop-blur-xl md:left-7.5 md:top-7 md:text-[10px] 2xl:left-9.5 2xl:top-9">
                 {moment.time}
               </div>
 
-              <div className="absolute bottom-6 left-6 right-6 z-2 text-white md:bottom-7.5 md:left-7.5 md:right-7.5 2xl:bottom-9.5 2xl:left-9.5 2xl:right-9.5">
+              <div className="absolute inset-x-4 bottom-4 z-2 text-white md:bottom-7.5 md:left-7.5 md:right-7.5 2xl:bottom-9.5 2xl:left-9.5 2xl:right-9.5">
                 <h3
                   className={
                     moment.featured
-                      ? 'mb-2.5 max-w-125 text-[26px] font-medium tracking-[-1px] md:text-[38px] md:tracking-[-1.8px] 2xl:text-[46px]'
-                      : 'mb-2.5 text-[26px] font-medium tracking-[-1px] md:text-[25px] 2xl:text-[30px]'
+                      ? 'mb-2 max-w-125 text-[24px] font-medium leading-[1.08] tracking-[-1px] sm:text-[28px] md:text-[38px] md:tracking-[-1.8px] 2xl:text-[46px]'
+                      : 'mb-2 text-[22px] font-medium leading-[1.08] tracking-[-0.8px] sm:text-[25px] md:text-[25px] 2xl:text-[30px]'
                   }
                 >
                   {moment.title}
                 </h3>
 
-                <p className="m-0 max-w-85 text-[11px] leading-[1.7] text-white/75 md:text-xs 2xl:text-sm">
+                <p className="m-0 max-w-85 text-[10px] leading-[1.6] text-white/80 sm:text-[11px] md:text-xs 2xl:text-sm">
                   {moment.text}
                 </p>
               </div>
             </article>
           ))}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }
