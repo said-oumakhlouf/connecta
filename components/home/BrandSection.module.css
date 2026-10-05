@@ -1,51 +1,52 @@
 .brandWord {
   position: absolute;
   left: 50%;
-  bottom: -12px;
+  bottom: -8px;
   display: flex;
   transform: translateX(-50%);
   white-space: nowrap;
   pointer-events: none;
-  font-size: clamp(84px, 27vw, 300px);
+  font-size: clamp(86px, 28vw, 300px);
   font-weight: 900;
   line-height: 0.8;
   letter-spacing: -0.065em;
 }
 
 .brandWord span {
-  color: rgb(255 255 255 / 0.025);
-  animation: connectionPulse 7s ease-in-out infinite;
-  animation-delay: calc(var(--letter-index) * 110ms);
+  color: rgb(255 255 255 / 0.04);
+  animation: connectionPulse 5.5s ease-in-out infinite;
+  animation-delay: calc(var(--letter-index) * 95ms);
 }
 
 @keyframes connectionPulse {
   0%,
-  4% {
-    color: rgb(255 255 255 / 0.025);
+  3% {
+    color: rgb(255 255 255 / 0.04);
     text-shadow: none;
     transform: translateY(0);
   }
 
-  8% {
-    color: rgb(255 255 255 / 0.07);
+  7% {
+    color: rgb(255 255 255 / 0.1);
   }
 
-  12% {
-    color: rgb(70 110 255 / 0.22);
+  11% {
+    color: rgb(73 112 255 / 0.5);
     text-shadow:
-      0 0 25px rgb(35 91 250 / 0.1),
-      0 0 60px rgb(35 91 250 / 0.06);
+      0 0 18px rgb(35 91 250 / 0.3),
+      0 0 42px rgb(35 91 250 / 0.18);
     transform: translateY(-2px);
   }
 
-  18% {
-    color: rgb(255 255 255 / 0.045);
+  17% {
+    color: rgb(255 255 255 / 0.075);
+    text-shadow: 0 0 12px rgb(35 91 250 / 0.08);
     transform: translateY(0);
   }
 
   25%,
   100% {
-    color: rgb(255 255 255 / 0.025);
+    color: rgb(255 255 255 / 0.04);
     text-shadow: none;
     transform: translateY(0);
   }
@@ -55,6 +56,10 @@
   .brandWord {
     bottom: -40px;
     font-size: clamp(120px, 18vw, 300px);
+  }
+
+  .brandWord span {
+    color: rgb(255 255 255 / 0.03);
   }
 }
 
