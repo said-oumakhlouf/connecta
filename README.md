@@ -35,6 +35,8 @@ ajouter son origine exacte à `CORS_ORIGINS` dans le backend et redémarrer celu
 Le total affiché inclut automatiquement l'offre Duo pour les quantités paires et
 impaires : 1 = 35 €, 2 = 60 €, 3 = 95 €, 4 = 120 € avec les tarifs actuels.
 Les prix et remises de la commande sont calculés par le backend.
+Le panier permet de commander le stock disponible, avec un maximum de 100 paires
+par commande : 20 paires en stock autorisent 20 Solo ou 10 packs Duo.
 En cas de stock insuffisant ou de produit modifié, le panier est conservé et sa
 disponibilité est actualisée. Une requête échouée n'est pas relancée automatiquement.
 La validation est bloquée pendant l'envoi, le chargement et lorsque le stock est insuffisant.

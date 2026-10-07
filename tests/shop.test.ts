@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createShopApi, ShopApiError } from '../lib/shop-api';
-import { getCartPrice, formatPrice } from '../lib/shop-pricing';
+import {
+  getCartPrice,
+  formatPrice,
+  getMaxCartCount,
+} from '../lib/shop-pricing';
 
 const product = {
   id: 7,
@@ -34,11 +38,28 @@ for (const [quantity, total, discount] of [
   [2, 6000, 1000],
   [3, 9500, 1000],
   [4, 12000, 2000],
+  [20, 60000, 10000],
 ]) {
   test(`cart pricing for ${quantity} pairs matches the backend`, () => {
     assert.deepEqual(getCartPrice(3500, 6000, quantity), { total, discount });
   });
 }
+
+test('twenty stocked pairs allow twenty Solo units or ten Duo packs', () => {
+  assert.equal(getMaxCartCount(20, 1), 20);
+  assert.equal(getMaxCartCount(20, 2), 10);
+});
+
+test('Duo quantities respect odd stock and a sold-out product', () => {
+  assert.equal(getMaxCartCount(21, 2), 10);
+  assert.equal(getMaxCartCount(1, 2), 0);
+  assert.equal(getMaxCartCount(0, 1), 0);
+});
+
+test('larger stock respects the backend limit of one hundred physical units', () => {
+  assert.equal(getMaxCartCount(250, 1), 100);
+  assert.equal(getMaxCartCount(250, 2), 50);
+});
 
 test('normal pricing applies when the Duo offer is absent or more expensive', () => {
   assert.deepEqual(getCartPrice(3500, null, 2), { total: 7000, discount: 0 });

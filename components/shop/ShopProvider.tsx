@@ -18,7 +18,7 @@ import {
   type ApiProduct,
   type CustomerDetails,
 } from '@/lib/shop-api';
-import { getCartPrice } from '@/lib/shop-pricing';
+import { getCartPrice, getMaxCartCount } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
   selectedOffer: OfferId;
@@ -107,9 +107,9 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     cartCount,
   );
   const maxCartCount =
-    product && cartOffer
-      ? Math.min(10, Math.floor(product.stock / cartOffer.quantity))
-      : 10;
+    product?.active && cartOffer
+      ? getMaxCartCount(product.stock, cartOffer.quantity)
+      : 0;
 
   function selectOffer(id: OfferId) {
     if (!submissionRef.current) setSelectedOffer(id);
@@ -154,7 +154,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       productError
     )
       return;
-    if (!product.active || cartCount > product.stock || cartCount < 1) {
+    if (!product.active || cart.count > maxCartCount || cartCount < 1) {
       setOrderError('La quantité demandée dépasse le stock disponible.');
       return;
     }

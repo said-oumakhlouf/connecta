@@ -1,3 +1,9 @@
+export const MAX_ORDER_UNITS = 100;
+
+export function getMaxCartCount(stock: number, unitsPerOffer: number) {
+  return Math.floor(Math.min(stock, MAX_ORDER_UNITS) / unitsPerOffer);
+}
+
 export function getCartPrice(
   price: number,
   duoPrice: number | null,
