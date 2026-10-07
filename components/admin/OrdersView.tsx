@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight, ClipboardList } from 'lucide-react';
+import { useState } from 'react';
 import type { AdminOrders } from '@/lib/admin-api';
 import { formatPrice } from '@/lib/shop-pricing';
 import styles from './AdminPanel.module.css';
@@ -18,11 +19,16 @@ export default function OrdersView({
   data,
   loading,
   onPage,
+  pendingOrderId,
+  onStatus,
 }: {
   data: AdminOrders | null;
   loading: boolean;
   onPage: (page: number) => void;
+  pendingOrderId: string | null;
+  onStatus: (id: string, status: 'CONFIRMED' | 'CANCELLED') => Promise<boolean>;
 }) {
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   return (
     <section
@@ -34,7 +40,8 @@ export default function OrdersView({
         <div>
           <h2 id="orders-title">Les dernières commandes</h2>
           <p>
-            Coordonnées, quantités et montants enregistrés lors de la commande.
+            Confirmez les commandes reçues ou annulez-les pour remettre les
+            articles en stock.
           </p>
         </div>
       </div>
@@ -107,6 +114,68 @@ export default function OrdersView({
                   </div>
                 ))}
               </details>
+              {order.status !== 'CANCELLED' && (
+                <div className={styles.orderActions}>
+                  {cancellingId === order.id ? (
+                    <>
+                      <p>
+                        Annuler cette commande ? Les{' '}
+                        {order.items.reduce(
+                          (sum, item) => sum + item.quantity,
+                          0,
+                        )}{' '}
+                        unité(s) seront remises en stock. Cette action est
+                        définitive.
+                      </p>
+                      <button
+                        type="button"
+                        className={styles.cancelButton}
+                        disabled={loading}
+                        onClick={async () => {
+                          if (await onStatus(order.id, 'CANCELLED'))
+                            setCancellingId(null);
+                        }}
+                      >
+                        {pendingOrderId === order.id
+                          ? 'Annulation…'
+                          : 'Oui, annuler la commande'}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.secondary}
+                        disabled={loading}
+                        onClick={() => setCancellingId(null)}
+                      >
+                        Conserver la commande
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {order.status === 'PENDING' && (
+                        <button
+                          type="button"
+                          className={styles.primary}
+                          disabled={loading}
+                          onClick={() => void onStatus(order.id, 'CONFIRMED')}
+                        >
+                          {pendingOrderId === order.id
+                            ? 'Confirmation…'
+                            : 'Confirmer la commande'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className={styles.secondary}
+                        disabled={loading}
+                        onClick={() => setCancellingId(order.id)}
+                      >
+                        Annuler
+                      </button>
+                      <p>Le statut de commande ne valide pas un paiement.</p>
+                    </>
+                  )}
+                </div>
+              )}
             </article>
           ))}
         </div>

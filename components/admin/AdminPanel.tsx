@@ -38,6 +38,7 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<ApiProduct[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingId, setPendingId] = useState<number | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const activeToken = useRef<string | null>(null);
@@ -52,6 +53,7 @@ export default function AdminPanel() {
     setProducts(null);
     setLoading(false);
     setPendingId(null);
+    setPendingOrderId(null);
     setPassword('');
     setSuccess('');
     setError(message);
@@ -182,6 +184,50 @@ export default function AdminPanel() {
     }
   }
 
+  async function updateOrderStatus(
+    orderId: string,
+    status: 'CONFIRMED' | 'CANCELLED',
+  ): Promise<boolean> {
+    if (!session || submitting.current || loading) return false;
+    submitting.current = true;
+    setPendingOrderId(orderId);
+    setError('');
+    setSuccess('');
+    const token = session.token;
+    let changed = false;
+    try {
+      const updated = await adminApi.updateOrderStatus(token, orderId, status);
+      if (token !== activeToken.current) return false;
+      changed = true;
+      setOrders((current) =>
+        current
+          ? {
+              ...current,
+              orders: current.orders.map((order) =>
+                order.id === updated.id ? updated : order,
+              ),
+            }
+          : null,
+      );
+      setSuccess(
+        status === 'CANCELLED'
+          ? 'Commande annulée. Les articles ont été remis en stock.'
+          : 'Commande confirmée. Le paiement reste à vérifier séparément.',
+      );
+      if (status === 'CANCELLED') {
+        const nextProducts = await adminApi.products(token);
+        if (token === activeToken.current) setProducts(nextProducts);
+      }
+      return true;
+    } catch (problem) {
+      if (token === activeToken.current) reportError(problem);
+      return changed;
+    } finally {
+      submitting.current = false;
+      setPendingOrderId(null);
+    }
+  }
+
   if (!session)
     return (
       <main className={styles.loginPage}>
@@ -228,7 +274,7 @@ export default function AdminPanel() {
       </main>
     );
 
-  const blocked = loading || pendingId !== null;
+  const blocked = loading || pendingId !== null || pendingOrderId !== null;
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
@@ -338,7 +384,9 @@ export default function AdminPanel() {
         {tab === 'orders' ? (
           <OrdersView
             data={orders}
-            loading={loading}
+            loading={blocked}
+            pendingOrderId={pendingOrderId}
+            onStatus={updateOrderStatus}
             onPage={(page) => void load(session.token, page)}
           />
         ) : (

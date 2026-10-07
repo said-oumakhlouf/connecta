@@ -94,6 +94,50 @@ test('logout sends authorization and accepts an empty 204 response', async () =>
   assert.equal(await api.logout(token), undefined);
 });
 
+test('order status changes authenticate and validate the returned order', async () => {
+  const order = {
+    id: 'order-id',
+    customerName: 'Test',
+    customerEmail: 'test@example.com',
+    status: 'CANCELLED',
+    createdAt: '2026-10-07T12:00:00.000Z',
+    total: 6000,
+    items: [
+      {
+        productId: 7,
+        productName: 'Hoco EW75',
+        quantity: 2,
+        unitPrice: 3500,
+        discount: 1000,
+        lineTotal: 6000,
+      },
+    ],
+  };
+  const api = createAdminApi('http://api.test', async (url, options) => {
+    assert.equal(url, 'http://api.test/admin/orders/order-id/status');
+    assert.equal(options?.method, 'POST');
+    assert.equal(
+      new Headers(options?.headers).get('Authorization'),
+      `Bearer ${token}`,
+    );
+    assert.deepEqual(JSON.parse(String(options?.body)), {
+      status: 'CANCELLED',
+    });
+    return json(order);
+  });
+  assert.equal(
+    (await api.updateOrderStatus(token, 'order-id', 'CANCELLED')).status,
+    'CANCELLED',
+  );
+  const malformed = createAdminApi('http://api.test', async () =>
+    json({ ...order, status: 'PAID' }),
+  );
+  await assert.rejects(
+    malformed.updateOrderStatus(token, 'order-id', 'CONFIRMED'),
+    /incomplète/,
+  );
+});
+
 for (const status of [401, 409, 429, 503]) {
   test(`admin propagates HTTP ${status} without retrying stock changes`, async () => {
     let calls = 0;

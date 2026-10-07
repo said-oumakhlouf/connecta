@@ -77,11 +77,15 @@ La session reste uniquement en mémoire, expire au bout de huit heures et néces
 une nouvelle connexion après rechargement de la page ou redémarrage de l'API.
 L'interface admin n'affiche ni le panier ni la barre mobile de commande.
 Les routes admin du backend vérifient la session avant de lire ou modifier des données.
-Les statuts sont consultables, sans action de confirmation ou d'annulation à ce stade.
+Une commande en attente peut être confirmée ou annulée. Une commande confirmée
+peut également être annulée. L’annulation demande une confirmation, devient
+définitive et remet les articles en stock une seule fois. Le stock affiché est
+actualisé après l’annulation. Confirmer ne valide pas un paiement.
 
 Pour tester le réapprovisionnement, partir d'un produit actif à zéro, ajouter
 20 unités dans l'admin, puis revenir à la boutique : le produit doit être disponible.
 Une commande de deux unités laisse 18 en stock et apparaît dans l'admin après actualisation.
+La confirmer conserve 18 unités ; l’annuler remet le stock à 20 et désactive les actions.
 
 ## Fichiers principaux
 

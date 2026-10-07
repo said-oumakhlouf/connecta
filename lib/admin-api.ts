@@ -81,10 +81,10 @@ function isOrders(value: unknown): value is AdminOrders {
 }
 
 const messages: Record<number, string> = {
-  400: 'Vérifiez les données saisies. La quantité doit être un entier entre 1 et 10 000.',
+  400: 'Vérifiez les données saisies : quantité entière entre 1 et 10 000 ou statut de commande valide.',
   401: 'Mot de passe incorrect ou session expirée. Reconnectez-vous.',
-  404: 'Ce produit est introuvable. Actualisez le stock.',
-  409: 'Le stock maximum serait dépassé. Vérifiez la quantité.',
+  404: 'Ce produit ou cette commande est introuvable. Actualisez les données.',
+  409: 'Action impossible : commande déjà annulée ou stock maximum dépassé. Actualisez les données.',
   429: 'Trop de tentatives. Patientez 15 minutes avant de réessayer.',
   503: 'L’accès admin n’est pas configuré. Renseignez ADMIN_PASSWORD dans le backend et redémarrez-le.',
 };
@@ -162,6 +162,20 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         (value): value is ApiProduct[] =>
           Array.isArray(value) && value.every(isProduct),
+      ),
+    updateOrderStatus: (
+      token: string,
+      orderId: string,
+      status: 'CONFIRMED' | 'CANCELLED',
+    ) =>
+      request(
+        `/admin/orders/${encodeURIComponent(orderId)}/status`,
+        {
+          method: 'POST',
+          headers: { ...auth(token), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        },
+        isOrder,
       ),
     restock: (token: string, productId: number, quantity: number) =>
       request(

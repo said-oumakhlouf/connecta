@@ -497,6 +497,35 @@
 .spinner {
   animation: spin 0.8s linear infinite;
 }
+.orderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eef0f3;
+}
+.orderActions p {
+  width: 100%;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #626977;
+}
+.cancelButton {
+  padding: 12px 16px;
+  border: 1px solid #e4b4b4;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #a12525;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
 @keyframes spin {
   to {
     transform: rotate(360deg);
