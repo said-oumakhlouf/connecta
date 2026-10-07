@@ -1,8 +1,11 @@
+'use client';
+
 import { ArrowRight } from 'lucide-react';
-import { OFFERS} from '@/data/offers';
+import { useShop } from '@/components/shop/ShopProvider';
 
 export default function Announcement() {
-  const duoOffer = OFFERS.duo;
+  const { offers } = useShop();
+  const duoOffer = offers.duo;
 
   return (
     <div className="bg-[#17191d] px-3 py-2.75 text-center text-[11px] tracking-[0.3px] text-[#cdd0d8]">

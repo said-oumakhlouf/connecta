@@ -5,3 +5,5 @@ out/
 .codex/
 .env
 .env.local
+.test-build/
+.env.*.local

@@ -5,15 +5,14 @@ import Link from 'next/link';
 
 import AnimatedProduct from '@/components/product/AnimatedProduct';
 import { useShop } from '@/components/shop/ShopProvider';
-import { OFFERS } from '@/data/offers';
 import { PRODUCTS } from '@/data/products';
 import { SITE } from '@/data/site';
 
 const product = PRODUCTS.ew75;
-const soloOffer = OFFERS.solo;
 
 export default function Hero() {
-  const { order } = useShop();
+  const { order, offers } = useShop();
+  const soloOffer = offers.solo;
 
   return (
     <section id="produit" className="relative overflow-hidden bg-[#f7f8fa]">

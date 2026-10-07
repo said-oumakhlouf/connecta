@@ -1,16 +1,18 @@
+'use client';
+
 import Container from '@/components/layout/Container';
 import OrderButton from '@/components/shop/OrderButton';
-import { OFFERS } from '@/data/offers';
+import { useShop } from '@/components/shop/ShopProvider';
 import { PRODUCTS } from '@/data/products';
 import Image from 'next/image';
 
 const product = PRODUCTS.ew75;
-const soloOffer = OFFERS.solo;
-const duoOffer = OFFERS.duo;
-
-const duoUnitPrice = duoOffer.price / duoOffer.quantity;
 
 export default function HocoEW75Page() {
+  const { offers } = useShop();
+  const soloOffer = offers.solo;
+  const duoOffer = offers.duo;
+  const duoUnitPrice = duoOffer.price / duoOffer.quantity;
   return (
     <main className="min-h-screen bg-white text-[#17191d]">
       <Container className="py-8 md:py-12">

@@ -3,17 +3,21 @@
 import { ArrowRight, Check } from 'lucide-react';
 
 import { useShop } from '@/components/shop/ShopProvider';
-import { OFFERS } from '@/data/offers';
 import { PRODUCTS } from '@/data/products';
 
 const product = PRODUCTS.ew75;
 
-const offers = Object.values(OFFERS);
-
-const duoSavings = OFFERS.solo.price * OFFERS.duo.quantity - OFFERS.duo.price;
-
 export default function OffersSection() {
-  const { selectedOffer, selectOffer, order } = useShop();
+  const {
+    selectedOffer,
+    selectOffer,
+    order,
+    offers: currentOffers,
+  } = useShop();
+  const offers = Object.values(currentOffers);
+  const duoSavings =
+    currentOffers.solo.price * currentOffers.duo.quantity -
+    currentOffers.duo.price;
 
   const offer = offers.find(
     (currentOffer) => currentOffer.id === selectedOffer,
@@ -97,7 +101,7 @@ export default function OffersSection() {
                   {currentOffer.description}
                 </p>
 
-                {isDuo && (
+                {isDuo && duoSavings > 0 && (
                   <span className="mt-5 inline-flex rounded-full bg-[#edf2ff] px-3 py-1.5 text-[8px] font-bold text-[#235bfa]">
                     {duoSavings} € économisés
                   </span>

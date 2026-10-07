@@ -1,35 +1,38 @@
-import { OFFERS } from '@/data/offers';
+'use client';
+
+import { useShop } from '@/components/shop/ShopProvider';
 import { PRODUCTS } from '@/data/products';
 import { ChevronDown } from 'lucide-react';
 
 const product = PRODUCTS.ew75;
-const soloOffer = OFFERS.duo;
-const duoOffer = OFFERS.duo;
-const duoUnitPrice = duoOffer.price / duoOffer.quantity;
-const duoSavings = soloOffer.price * duoOffer.quantity - duoOffer.price;
-
-const FAQS = [
-  {
-    question: `Que contient une paire ${product.name} ?`,
-    answer: `Deux écouteurs ${product.name} et leur boîtier de recharge. Le contenu exact et les accessoires seront confirmés avant l’ouverture des ventes.`,
-  },
-  {
-    question: 'Puis-je les utiliser avec mon téléphone ?',
-    answer:
-      'Ils sont destinés aux appareils disposant du Bluetooth. La compatibilité précise sera confirmée dans la fiche produit définitive.',
-  },
-  {
-    question: 'Comment fonctionne l’offre Duo ?',
-    answer: `Le pack comprend ${duoOffer.quantity} paires pour ${duoOffer.price}€, soit ${duoUnitPrice} € la paire et ${duoSavings} € de moins que deux paires achetées séparément.`,
-  },
-  {
-    question: 'Quelles sont les conditions de livraison et de retour ?',
-    answer:
-      'Les modalités de livraison, de retour et de garantie seront précisées avant le lancement des ventes.',
-  },
-] as const;
-
 export default function FaqSection() {
+  const { offers } = useShop();
+  const soloOffer = offers.solo;
+  const duoOffer = offers.duo;
+  const duoUnitPrice = duoOffer.price / duoOffer.quantity;
+  const duoSavings = soloOffer.price * duoOffer.quantity - duoOffer.price;
+
+  const FAQS = [
+    {
+      question: `Que contient une paire ${product.name} ?`,
+      answer: `Deux écouteurs ${product.name} et leur boîtier de recharge. Le contenu exact et les accessoires seront confirmés avant l’ouverture des ventes.`,
+    },
+    {
+      question: 'Puis-je les utiliser avec mon téléphone ?',
+      answer:
+        'Ils sont destinés aux appareils disposant du Bluetooth. La compatibilité précise sera confirmée dans la fiche produit définitive.',
+    },
+    {
+      question: 'Comment fonctionne l’offre Duo ?',
+      answer: `Le pack comprend ${duoOffer.quantity} paires pour ${duoOffer.price}€, soit ${duoUnitPrice} € la paire et ${duoSavings} € de moins que deux paires achetées séparément.`,
+    },
+    {
+      question: 'Quelles sont les conditions de livraison et de retour ?',
+      answer:
+        'Les modalités de livraison, de retour et de garantie seront précisées avant le lancement des ventes.',
+    },
+  ] as const;
+
   return (
     <section
       id="faq"
