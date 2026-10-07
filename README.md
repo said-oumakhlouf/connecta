@@ -54,6 +54,33 @@ Renseigner aussi l'origine HTTPS du frontend dans `CORS_ORIGINS` côté backend.
 `npm run build` génère un site statique dans `out/`.
 Pour le développement utiliser `npm run dev` ; `npm start` n'est pas adapté à cet export statique.
 
+## Administration
+
+Ouvrir **http://localhost:3000/admin**, ou le lien Administration dans le pied de page.
+Ajouter d'abord `ADMIN_PASSWORD` au `.env` du **backend** avec un mot de passe privé
+de 16 à 256 caractères, puis redémarrer ce backend. Aucun secret admin ne doit être
+placé dans le frontend, dans `NEXT_PUBLIC_API_URL` ou dans Git.
+
+Après connexion :
+
+- **Commandes** : coordonnées des clients, date, statut, quantités, total et détail
+  des prix/remises enregistrés. Les commandes sont paginées par groupes de 20.
+- **Produits et stock** : état et stock de tous les produits. Saisir les unités
+  réellement reçues puis cliquer Ajouter. Une saisie de 20 ajoute 20 unités au
+  stock existant ; elle ne le remplace pas.
+- **Actualiser** : recharge les commandes et le stock depuis la BDD.
+- **Déconnexion** : invalide la session côté API et efface les données affichées.
+
+La session reste uniquement en mémoire, expire au bout de huit heures et nécessite
+une nouvelle connexion après rechargement de la page ou redémarrage de l'API.
+L'interface admin n'affiche ni le panier ni la barre mobile de commande.
+Les routes admin du backend vérifient la session avant de lire ou modifier des données.
+Les statuts sont consultables, sans action de confirmation ou d'annulation à ce stade.
+
+Pour tester le réapprovisionnement, partir d'un produit actif à zéro, ajouter
+20 unités dans l'admin, puis revenir à la boutique : le produit doit être disponible.
+Une commande de deux unités laisse 18 en stock et apparaît dans l'admin après actualisation.
+
 ## Fichiers principaux
 
 - `components/shop/ShopProvider.tsx` : produit distant, état du panier et création de commande.

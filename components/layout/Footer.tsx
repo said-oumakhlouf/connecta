@@ -33,7 +33,9 @@ export default function Footer() {
           <span>
             © {new Date().getFullYear()} {SITE.name}
           </span>
-
+          <a href="/admin" className="transition hover:text-[#17191d]">
+            Administration
+          </a>
         </div>
       </Container>
     </footer>

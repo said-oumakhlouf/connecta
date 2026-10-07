@@ -2,11 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
 
-import CartDialog from '@/components/shop/CartDialog';
-import Footer from '@/components/layout/Footer';
-import Header from '@/components/layout/Header';
-import MobileOrder from '@/components/shop/MobileOrder';
-import ShopProvider from '@/components/shop/ShopProvider';
+import SiteShell from '@/components/layout/SiteShell';
 import { SITE } from '@/data/site';
 
 import './globals.css';
@@ -30,16 +26,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="fr" className={manrope.variable}>
       <body>
-        <ShopProvider>
-          <Header />
-
-          {children}
-
-          <Footer />
-
-          <MobileOrder />
-          <CartDialog />
-        </ShopProvider>
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );

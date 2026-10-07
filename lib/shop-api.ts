@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './api-config';
+
 export type ApiProduct = {
   id: number;
   name: string;
@@ -46,7 +48,7 @@ function isAmount(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
-function isProduct(value: unknown): value is ApiProduct {
+export function isProduct(value: unknown): value is ApiProduct {
   return (
     isRecord(value) &&
     isAmount(value.id) &&
@@ -164,7 +166,4 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
   };
 }
 
-export const shopApi = createShopApi(
-  process.env.NEXT_PUBLIC_API_URL ??
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
-);
+export const shopApi = createShopApi(API_BASE_URL);
