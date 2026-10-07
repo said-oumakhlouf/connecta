@@ -1,5 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
-import type { CSSProperties } from "react";
+import Image from "next/image";
 
 import Container from "@/components/layout/Container";
 import { SITE } from "@/data/site";
@@ -89,18 +89,13 @@ export default function BrandSection() {
       </Container>
 
       <div aria-hidden="true" className={styles.brandWord}>
-        {SITE.name.split("").map((letter, index) => (
-          <span
-            key={`${letter}-${index}`}
-            style={
-              {
-                "--letter-index": index,
-              } as CSSProperties
-            }
-          >
-            {letter}
-          </span>
-        ))}
+        <Image
+          src="/connecta-logo-white.svg"
+          alt=""
+          width={704}
+          height={72}
+          className="h-auto w-full"
+        />
       </div>
     </section>
   );

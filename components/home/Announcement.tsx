@@ -12,7 +12,7 @@ export default function Announcement() {
       À deux, c’est encore mieux.
       <a
         href="#offres"
-        className="ml-2 inline-flex items-center gap-2 font-semibold text-white"
+        className="font-heading ml-2 inline-flex items-center gap-2 font-semibold text-white"
       >
         {duoOffer.quantity} paires pour {duoOffer.price} €
         <ArrowRight size={13} />

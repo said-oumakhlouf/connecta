@@ -26,7 +26,7 @@ export default function Hero() {
             {SITE.name} / ÉCOUTEURS SANS FIL
           </div>
 
-          <h1 className="max-w-140 text-[42px] font-semibold leading-[0.98] tracking-[-2.2px] text-[#17191d] sm:text-[48px] sm:tracking-[-2.6px] md:text-[66px] md:leading-[0.93] md:tracking-[-4px] xl:text-[78px] 2xl:text-[90px] 2xl:tracking-[-5px]">
+          <h1 className="max-w-140 text-[38px] font-semibold leading-[1.02] tracking-[-1.8px] text-[#17191d] sm:text-[44px] sm:tracking-[-2px] md:text-[56px] md:leading-[0.98] md:tracking-[-2.6px] xl:text-[64px] 2xl:text-[76px] 2xl:tracking-[-3.5px]">
             Des écouteurs simples.
             <br />
             Pour tous les jours.
@@ -41,7 +41,7 @@ export default function Hero() {
           </p>
 
           <div className="mt-6 flex items-end gap-3 md:mt-8 md:gap-4">
-            <strong className="text-[34px] font-semibold leading-none tracking-[-1.7px] text-[#17191d] md:text-[44px] md:tracking-[-2px]">
+            <strong className="font-heading text-[34px] font-semibold leading-none tracking-[-1.7px] text-[#17191d] md:text-[44px] md:tracking-[-2px]">
               {soloOffer.price} €
             </strong>
 
@@ -66,7 +66,7 @@ export default function Hero() {
 
             <Link
               href="/produit/hoco-ew75"
-              className="group inline-flex items-center gap-2 text-[10px] font-semibold text-[#51565f] transition hover:text-[#235bfa] md:text-[11px]"
+              className="font-heading group inline-flex items-center gap-2 text-[10px] font-semibold text-[#51565f] transition hover:text-[#235bfa] md:text-[11px]"
             >
               Voir la fiche produit
               <ArrowRight

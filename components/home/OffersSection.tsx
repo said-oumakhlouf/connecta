@@ -97,7 +97,7 @@ export default function OffersSection() {
                   </div>
                 </div>
 
-                <p className="mt-4 max-w-85 text-[11px] leading-[1.7] text-[#747982] md:text-xs">
+                <p className="font-body mt-4 max-w-85 text-[11px] leading-[1.7] text-[#747982] md:text-xs">
                   {currentOffer.description}
                 </p>
 

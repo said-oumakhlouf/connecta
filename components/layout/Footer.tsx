@@ -22,7 +22,7 @@ export default function Footer() {
 
           <a
             href="/#produit"
-            className="inline-flex items-center gap-2 text-[10px] font-semibold text-[#17191d] transition hover:opacity-60 md:text-xs"
+            className="font-heading inline-flex items-center gap-2 text-[10px] font-semibold text-[#17191d] transition hover:opacity-60 md:text-xs"
           >
             Découvrir les {product.name}
             <ArrowUpRight size={15} />

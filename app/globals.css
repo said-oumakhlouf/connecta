@@ -5,11 +5,19 @@
    ========================================================= */
 
 :root {
+  --font-heading: var(--font-montserrat), Arial, Helvetica, sans-serif;
+  --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
   --blue: #235bfa;
   --ink: #17191d;
   --muted: #72767f;
   --line: #e9eaed;
   --panel: #f6f7f9;
+}
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-montserrat), Arial, Helvetica, sans-serif;
+  --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 html {
@@ -23,13 +31,22 @@ body {
   background: #fff;
   color: var(--ink);
 
-  font-family:
-    var(--font-manrope),
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: var(--font-body);
 
   -webkit-font-smoothing: antialiased;
+}
+
+/* Brand typography; form fields retain the body face for readability. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button,
+summary,
+nav {
+  font-family: var(--font-heading);
 }
 
 button {

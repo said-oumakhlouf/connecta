@@ -1,16 +1,22 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Manrope } from 'next/font/google';
+import { Inter, Montserrat } from 'next/font/google';
 
 import SiteShell from '@/components/layout/SiteShell';
 import { SITE } from '@/data/site';
 
 import './globals.css';
 
-const manrope = Manrope({
+const montserrat = Montserrat({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-manrope',
+  variable: '--font-montserrat',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,7 @@ type RootLayoutProps = Readonly<{
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="fr" className={manrope.variable}>
+    <html lang="fr" className={`${montserrat.variable} ${inter.variable}`}>
       <body>
         <SiteShell>{children}</SiteShell>
       </body>

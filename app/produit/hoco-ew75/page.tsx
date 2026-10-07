@@ -44,7 +44,7 @@ export default function HocoEW75Page() {
             </p>
 
             <div className="mt-8 flex items-center gap-5">
-              <strong className="text-[34px] font-semibold tracking-[-1.7px] md:text-[38px] 2xl:text-[44px]">
+              <strong className="font-heading text-[34px] font-semibold tracking-[-1.7px] md:text-[38px] 2xl:text-[44px]">
                 {soloOffer.price} €
               </strong>
 
@@ -68,7 +68,7 @@ export default function HocoEW75Page() {
 
               <OrderButton
                 offerId="duo"
-                className="mt-4 text-[11px] font-semibold text-[#235bfa] transition hover:text-[#1645cf]"
+                className="font-heading mt-4 text-[11px] font-semibold text-[#235bfa] transition hover:text-[#1645cf]"
               >
                 Choisir le Duo →
               </OrderButton>

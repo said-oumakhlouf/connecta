@@ -1,4 +1,4 @@
-import LogoMark from '@/components/layout/LogoMark';
+import Image from 'next/image';
 import { SITE } from '@/data/site';
 
 type LogoProps = {
@@ -10,11 +10,17 @@ export default function Logo({ href = '/' }: LogoProps) {
     <a
       href={href}
       aria-label={`${SITE.name}, accueil`}
-      className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-[20px] font-black tracking-[-1px] text-[#17191d] sm:text-[22px] sm:tracking-[-1.1px] md:gap-1 md:text-[25px] md:tracking-[-1.2px]"
+      className="inline-flex shrink-0 items-center text-[#17191d] transition-opacity hover:opacity-70"
     >
-      {SITE.name}
-
-      <LogoMark />
+      <Image
+        src="/connecta-logo.svg"
+        alt=""
+        aria-hidden="true"
+        width={704}
+        height={72}
+        className="h-auto w-[158px] sm:w-[180px] md:w-[205px]"
+        priority
+      />
     </a>
   );
 }

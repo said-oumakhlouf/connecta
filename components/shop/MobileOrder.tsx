@@ -9,7 +9,7 @@ export default function MobileOrder() {
     <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-[#e9eaed] bg-white/95 px-4 py-2.5 shadow-[0_-8px_30px_#2029380b] backdrop-blur-xl sm:px-5.5 md:hidden">
       <div className="min-w-0">
         <div className="flex items-baseline gap-1.5">
-          <strong className="text-[19px] font-semibold tracking-[-0.6px]">
+          <strong className="font-heading text-[19px] font-semibold tracking-[-0.6px]">
             {offer.price} €
           </strong>
 
