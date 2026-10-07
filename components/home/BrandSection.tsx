@@ -90,7 +90,7 @@ export default function BrandSection() {
 
       <div aria-hidden="true" className={styles.brandWord}>
         <Image
-          src="/connecta-logo-white.svg"
+          src="/connecta-logo-blue.svg"
           alt=""
           width={704}
           height={72}
