@@ -2,11 +2,11 @@
 
 import { ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
+import BrandName from '@/components/layout/BrandName';
 
 import AnimatedProduct from '@/components/product/AnimatedProduct';
 import { useShop } from '@/components/shop/ShopProvider';
 import { PRODUCTS } from '@/data/products';
-import { SITE } from '@/data/site';
 
 const product = PRODUCTS.ew75;
 
@@ -23,7 +23,7 @@ export default function Hero() {
         <div className="relative z-10 max-w-135 2xl:max-w-155">
           <div className="mb-5 flex items-center gap-2.5 text-[8px] font-bold uppercase tracking-[1.4px] text-[#7a8089] sm:text-[9px] md:mb-7 md:gap-3 md:text-[10px] md:tracking-[1.7px]">
             <span className="h-px w-5 bg-[#235bfa] md:w-7" />
-            {SITE.name} / ÉCOUTEURS SANS FIL
+            <BrandName /> / ÉCOUTEURS SANS FIL
           </div>
 
           <h1 className="max-w-140 text-[38px] font-semibold leading-[1.02] tracking-[-1.8px] text-[#17191d] sm:text-[44px] sm:tracking-[-2px] md:text-[56px] md:leading-[0.98] md:tracking-[-2.6px] xl:text-[64px] 2xl:text-[76px] 2xl:tracking-[-3.5px]">

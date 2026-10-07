@@ -1,4 +1,5 @@
 import type { AdminAnalytics } from '@/lib/admin-api';
+import BrandName from '@/components/layout/BrandName';
 import { formatPrice } from '@/lib/shop-pricing';
 import styles from './AdminPanel.module.css';
 
@@ -22,7 +23,7 @@ export default function AnalyticsView({
     >
       <div className={styles.sectionHeading}>
         <div>
-          <p className={styles.eyebrow}>L’ACTIVITÉ DE CONNECTA</p>
+          <p className={styles.eyebrow}>L’ACTIVITÉ DE <BrandName /></p>
           <h2 id="analytics-title">Votre bilan mensuel.</h2>
           <p>
             Commandes du mois choisi, selon l’heure de Paris. Annulations

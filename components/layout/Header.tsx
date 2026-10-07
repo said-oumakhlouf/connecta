@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 import Container from '@/components/layout/Container';
 import Logo from '@/components/layout/Logo';
+import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
-import { SITE } from '@/data/site';
 
 const NAVIGATION = [
   {
@@ -14,7 +14,7 @@ const NAVIGATION = [
     href: '/#produit',
   },
   {
-    label: `Pourquoi ${SITE.name} ?`,
+    label: <>Pourquoi <BrandName /> ?</>,
     href: '/#brand',
   },
   {

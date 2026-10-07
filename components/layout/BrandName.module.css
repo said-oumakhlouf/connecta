@@ -1,0 +1,9 @@
+.wordmark {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7.04em;
+  height: 0.72em;
+  vertical-align: baseline;
+  background-color: currentColor;
+  mask: url('/connecta-logo-white.svg') center / contain no-repeat;
+}

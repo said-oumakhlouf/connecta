@@ -19,6 +19,7 @@ import {
   type FormEvent,
 } from 'react';
 import Logo from '@/components/layout/Logo';
+import BrandName from '@/components/layout/BrandName';
 import {
   adminApi,
   AdminApiError,
@@ -261,7 +262,7 @@ export default function AdminPanel() {
           <p className={styles.eyebrow}>ESPACE ADMINISTRATEUR</p>
           <h1>Bienvenue chez vous.</h1>
           <p className={styles.muted}>
-            Retrouvez vos commandes et gérez votre stock CONNECTA.
+            Retrouvez vos commandes et gérez votre stock <BrandName />.
           </p>
           <form onSubmit={login} className={styles.loginForm}>
             <label htmlFor="admin-password">Mot de passe administrateur</label>

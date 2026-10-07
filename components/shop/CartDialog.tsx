@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, Check, LoaderCircle, Minus, Plus, X } from 'lucide-react';
 import ProductVisual from '@/components/product/ProductVisual';
+import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { PRODUCTS } from '@/data/products';
 import { formatPrice } from '@/lib/shop-pricing';
@@ -61,7 +62,7 @@ export default function CartDialog() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <span className="text-[9px] font-bold tracking-[1.5px] text-[#90959e]">
-              CONNECTA
+              <BrandName />
             </span>
             <h2
               id="cart-title"

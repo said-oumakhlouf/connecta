@@ -1,7 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 
 import Container from "@/components/layout/Container";
-import { SITE } from "@/data/site";
+import BrandName from "@/components/layout/BrandName";
 
 import styles from "./BrandSection.module.css";
 
@@ -36,7 +36,7 @@ export default function BrandSection() {
           <div>
             <div className="flex items-center gap-2.5 text-[9px] font-bold tracking-[1.5px] text-[#7394ff] md:gap-3 md:text-[10px] md:tracking-[1.7px]">
               <span className="h-px w-5 bg-[#235bfa] md:w-7" />
-              L’ESPRIT {SITE.name}
+              L’ESPRIT <BrandName />
             </div>
 
             <h2 className="mt-5 max-w-130 text-[34px] font-medium leading-[1.04] tracking-[-1.7px] sm:text-[38px] md:mt-6 md:text-[54px] md:tracking-[-3px] 2xl:text-[64px]">
@@ -55,7 +55,7 @@ export default function BrandSection() {
               </p>
 
               <p className="mt-4 max-w-115 text-[12px] leading-[1.75] text-[#a1a7b1] sm:text-[13px] md:mt-5 md:text-[13px] md:leading-[1.8] 2xl:text-[14px]">
-                Chez {SITE.name}, on choisit des produits pensés pour le
+                Chez <BrandName />, on choisit des produits pensés pour le
                 quotidien : utiles, simples et accessibles. Parce que la
                 technologie n’a pas besoin d’être compliquée pour être pratique.
               </p>
