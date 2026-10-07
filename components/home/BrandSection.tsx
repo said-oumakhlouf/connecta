@@ -1,5 +1,4 @@
 import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
 
 import Container from "@/components/layout/Container";
 import { SITE } from "@/data/site";
@@ -88,15 +87,7 @@ export default function BrandSection() {
         </div>
       </Container>
 
-      <div aria-hidden="true" className={styles.brandWord}>
-        <Image
-          src="/connecta-logo-blue.svg"
-          alt=""
-          width={704}
-          height={72}
-          className="h-auto w-full"
-        />
-      </div>
+      <div aria-hidden="true" className={styles.brandWord} />
     </section>
   );
 }
