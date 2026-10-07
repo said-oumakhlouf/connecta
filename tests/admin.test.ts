@@ -18,6 +18,56 @@ const json = (body: unknown, status = 200) =>
     headers: { 'Content-Type': 'application/json' },
   });
 
+const analytics = {
+  month: '2026-10',
+  timeZone: 'Europe/Paris',
+  amount: 6000,
+  orderCount: 1,
+  units: 2,
+  averageOrder: 6000,
+  pending: { count: 1, amount: 6000 },
+  confirmed: { count: 0, amount: 0 },
+  cancelled: { count: 0, amount: 0 },
+  products: [
+    {
+      productId: 7,
+      name: 'Hoco EW75',
+      units: 2,
+      amount: 6000,
+      discount: 1000,
+      orderCount: 1,
+    },
+  ],
+};
+
+test('monthly analytics reads protected server aggregates for the selected month', async () => {
+  const api = createAdminApi('http://api.test', async (url, options) => {
+    assert.equal(url, 'http://api.test/admin/analytics?month=2026-10');
+    assert.equal(
+      new Headers(options?.headers).get('Authorization'),
+      `Bearer ${token}`,
+    );
+    assert.equal(options?.cache, 'no-store');
+    return json(analytics);
+  });
+  const data = await api.analytics(token, '2026-10');
+  assert.equal(data.amount, 6000);
+  assert.equal(data.products[0].units, 2);
+});
+
+test('monthly analytics rejects partial, negative and invalid month data', async () => {
+  for (const body of [
+    {},
+    { ...analytics, amount: -1 },
+    { ...analytics, month: '2026-13' },
+    { ...analytics, month: '2026-09' },
+    { ...analytics, products: [{ ...analytics.products[0], units: '2' }] },
+  ]) {
+    const api = createAdminApi('http://api.test', async () => json(body));
+    await assert.rejects(api.analytics(token, '2026-10'), /incomplète/);
+  }
+});
+
 test('admin login sends the password only to the backend and reads the session', async () => {
   const api = createAdminApi('http://api.test/', async (url, options) => {
     assert.equal(url, 'http://api.test/admin/login');

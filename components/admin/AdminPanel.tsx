@@ -24,10 +24,12 @@ import {
   AdminApiError,
   type AdminOrders,
   type AdminSession,
+  type AdminAnalytics,
 } from '@/lib/admin-api';
 import type { ApiProduct } from '@/lib/shop-api';
 import OrdersView from './OrdersView';
 import StockView from './StockView';
+import AnalyticsView from './AnalyticsView';
 import styles from './AdminPanel.module.css';
 
 export default function AdminPanel() {
@@ -36,6 +38,16 @@ export default function AdminPanel() {
   const [tab, setTab] = useState<'orders' | 'stock'>('orders');
   const [orders, setOrders] = useState<AdminOrders | null>(null);
   const [products, setProducts] = useState<ApiProduct[] | null>(null);
+  const [month, setMonth] = useState(() => {
+    const parts = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+    }).formatToParts(new Date());
+    return `${parts.find((part) => part.type === 'year')!.value}-${parts.find((part) => part.type === 'month')!.value}`;
+  });
+  const monthRef = useRef(month);
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingId, setPendingId] = useState<number | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
@@ -51,6 +63,7 @@ export default function AdminPanel() {
     setSession(null);
     setOrders(null);
     setProducts(null);
+    setAnalytics(null);
     setLoading(false);
     setPendingId(null);
     setPendingOrderId(null);
@@ -71,15 +84,16 @@ export default function AdminPanel() {
   );
 
   const load = useCallback(
-    async (token: string, page = 1) => {
+    async (token: string, page = 1, selectedMonth = monthRef.current) => {
       const sequence = ++requestSequence.current;
       setLoading(true);
       setError('');
       setSuccess('');
       try {
-        const [nextOrders, nextProducts] = await Promise.all([
+        const [nextOrders, nextProducts, nextAnalytics] = await Promise.all([
           adminApi.orders(token, page),
           adminApi.products(token),
+          adminApi.analytics(token, selectedMonth),
         ]);
         if (
           sequence !== requestSequence.current ||
@@ -88,6 +102,7 @@ export default function AdminPanel() {
           return;
         setOrders(nextOrders);
         setProducts(nextProducts);
+        setAnalytics(nextAnalytics);
       } catch (problem) {
         if (
           sequence === requestSequence.current &&
@@ -214,9 +229,16 @@ export default function AdminPanel() {
           ? 'Commande annulée. Les articles ont été remis en stock.'
           : 'Commande confirmée. Le paiement reste à vérifier séparément.',
       );
-      if (status === 'CANCELLED') {
-        const nextProducts = await adminApi.products(token);
-        if (token === activeToken.current) setProducts(nextProducts);
+      setAnalytics(null);
+      const [nextAnalytics, nextProducts] = await Promise.all([
+        adminApi.analytics(token, monthRef.current),
+        status === 'CANCELLED'
+          ? adminApi.products(token)
+          : Promise.resolve(null),
+      ]);
+      if (token === activeToken.current) {
+        setAnalytics(nextAnalytics);
+        if (nextProducts) setProducts(nextProducts);
       }
       return true;
     } catch (problem) {
@@ -350,6 +372,18 @@ export default function AdminPanel() {
             <small>Actifs et en stock</small>
           </div>
         </div>
+        <AnalyticsView
+          data={analytics}
+          month={month}
+          blocked={blocked}
+          onMonth={(nextMonth) => {
+            if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(nextMonth) || blocked) return;
+            monthRef.current = nextMonth;
+            setMonth(nextMonth);
+            setAnalytics(null);
+            void load(session.token, orders?.page ?? 1, nextMonth);
+          }}
+        />
         <nav className={styles.tabs} aria-label="Vues de l’administration">
           <button
             type="button"

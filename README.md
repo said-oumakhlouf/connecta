@@ -63,6 +63,14 @@ Ajouter d'abord `ADMIN_PASSWORD` au `.env` du **backend** avec un mot de passe p
 de 16 à 256 caractères, puis redémarrer ce backend. Aucun secret admin ne doit être
 placé dans le frontend, dans `NEXT_PUBLIC_API_URL` ou dans Git.
 
+Après connexion, le **bilan mensuel** permet de choisir un mois et affiche le montant
+des commandes, le nombre de commandes, les unités et le panier moyen, ainsi que
+les montants en attente, confirmés et annulés. Les annulations sont exclues des totaux.
+Le classement des produits utilise les quantités réelles et les prix/remises historiques,
+calculés sur toutes les commandes du mois en heure de Paris, au-delà de la pagination.
+Ces montants ne sont pas des paiements encaissés ni des bénéfices. Le bilan est actualisé
+après confirmation ou annulation d’une commande.
+
 Après connexion :
 
 - **Commandes** : coordonnées des clients, date, statut, quantités, total et détail

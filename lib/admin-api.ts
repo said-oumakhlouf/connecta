@@ -14,6 +14,26 @@ export type AdminOrders = {
   limit: number;
 };
 
+export type AdminAnalytics = {
+  month: string;
+  timeZone: 'Europe/Paris';
+  amount: number;
+  orderCount: number;
+  units: number;
+  averageOrder: number;
+  pending: { count: number; amount: number };
+  confirmed: { count: number; amount: number };
+  cancelled: { count: number; amount: number };
+  products: Array<{
+    productId: number;
+    name: string;
+    units: number;
+    amount: number;
+    discount: number;
+    orderCount: number;
+  }>;
+};
+
 export class AdminApiError extends Error {
   constructor(
     message: string,
@@ -80,8 +100,38 @@ function isOrders(value: unknown): value is AdminOrders {
   );
 }
 
+function isAnalytics(value: unknown): value is AdminAnalytics {
+  const status = (item: unknown) =>
+    record(item) && integer(item.count) && integer(item.amount);
+  return (
+    record(value) &&
+    typeof value.month === 'string' &&
+    /^20\d{2}-(0[1-9]|1[0-2])$/.test(value.month) &&
+    value.timeZone === 'Europe/Paris' &&
+    integer(value.amount) &&
+    integer(value.orderCount) &&
+    integer(value.units) &&
+    integer(value.averageOrder) &&
+    status(value.pending) &&
+    status(value.confirmed) &&
+    status(value.cancelled) &&
+    Array.isArray(value.products) &&
+    value.products.every(
+      (item: unknown) =>
+        record(item) &&
+        integer(item.productId) &&
+        item.productId > 0 &&
+        typeof item.name === 'string' &&
+        integer(item.units) &&
+        integer(item.amount) &&
+        integer(item.discount) &&
+        integer(item.orderCount),
+    )
+  );
+}
+
 const messages: Record<number, string> = {
-  400: 'Vérifiez les données saisies : quantité entière entre 1 et 10 000 ou statut de commande valide.',
+  400: 'Vérifiez la quantité (1 à 10 000), le statut ou le mois sélectionné.',
   401: 'Mot de passe incorrect ou session expirée. Reconnectez-vous.',
   404: 'Ce produit ou cette commande est introuvable. Actualisez les données.',
   409: 'Action impossible : commande déjà annulée ou stock maximum dépassé. Actualisez les données.',
@@ -162,6 +212,16 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         (value): value is ApiProduct[] =>
           Array.isArray(value) && value.every(isProduct),
+      ),
+    analytics: (token: string, month: string) =>
+      request(
+        `/admin/analytics?month=${encodeURIComponent(month)}`,
+        {
+          method: 'GET',
+          headers: auth(token),
+        },
+        (value): value is AdminAnalytics =>
+          isAnalytics(value) && value.month === month,
       ),
     updateOrderStatus: (
       token: string,
