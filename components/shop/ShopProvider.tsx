@@ -14,10 +14,10 @@ import { OFFERS, type Cart, type Offer, type OfferId } from '@/data/offers';
 import {
   shopApi,
   ShopApiError,
-  type ApiOrder,
   type ApiProduct,
   type CustomerDetails,
 } from '@/lib/shop-api';
+import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { getCartPrice, getMaxCartCount } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
@@ -34,8 +34,8 @@ type ShopContextValue = {
   productLoading: boolean;
   productError: string | null;
   orderError: string | null;
-  receipt: ApiOrder | null;
   isSubmitting: boolean;
+  hasCheckoutAttempt: boolean;
   dialogRef: RefObject<HTMLDialogElement | null>;
   selectOffer: (id: OfferId) => void;
   order: (id?: OfferId) => void;
@@ -55,8 +55,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<ApiOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasCheckoutAttempt, setHasCheckoutAttempt] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const submissionRef = useRef(false);
   const loadSequence = useRef(0);
@@ -83,6 +83,22 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    try {
+      const saved = JSON.parse(
+        sessionStorage.getItem('connectaCheckoutAttempt') ?? 'null',
+      ) as { quantity?: number } | null;
+      if (
+        saved &&
+        Number.isInteger(saved.quantity) &&
+        saved.quantity! >= 1 &&
+        saved.quantity! <= 100
+      ) {
+        setHasCheckoutAttempt(true);
+        setCart({ id: 'solo', count: saved.quantity! });
+      }
+    } catch {
+      /* No previous checkout to resume. */
+    }
     void refreshProduct();
     return () => {
       loadSequence.current += 1;
@@ -123,16 +139,15 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     if (submissionRef.current) return;
     setSelectedOffer(id);
     setCart({ id, count: 1 });
-    setReceipt(null);
     setOrderError(null);
     openDialog();
     void refreshProduct();
   }
 
   function openCart() {
-    if (cart || receipt) {
+    if (cart) {
       openDialog();
-      if (!receipt && !submissionRef.current) void refreshProduct();
+      if (!submissionRef.current) void refreshProduct();
     } else {
       order();
     }
@@ -141,7 +156,6 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   function closeCart() {
     if (submissionRef.current) return;
     if (dialogRef.current?.open) dialogRef.current.close();
-    setReceipt(null);
     setOrderError(null);
   }
 
@@ -154,7 +168,11 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       productError
     )
       return;
-    if (!product.active || cart.count > maxCartCount || cartCount < 1) {
+    if (
+      !product.active ||
+      (!hasCheckoutAttempt && cart.count > maxCartCount) ||
+      cartCount < 1
+    ) {
       setOrderError('La quantité demandée dépasse le stock disponible.');
       return;
     }
@@ -167,10 +185,24 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     setIsSubmitting(true);
     setOrderError(null);
     try {
-      const result = await shopApi.createOrder(customer, product.id, cartCount);
-      setReceipt(result);
-      setCart(null);
-      void refreshProduct();
+      const key = await checkoutAttempt(
+        {
+          customerName: customer.customerName.trim(),
+          customerEmail: customer.customerEmail.trim().toLowerCase(),
+          productId: product.id,
+          quantity: cartCount,
+        },
+        sessionStorage,
+      );
+      setHasCheckoutAttempt(true);
+      const result = await shopApi.checkout(
+        customer,
+        product.id,
+        cartCount,
+        key,
+      );
+      sessionStorage.setItem('connectaCheckoutSession', JSON.stringify(result));
+      window.location.assign(result.url);
     } catch (error) {
       setOrderError(
         error instanceof Error
@@ -181,6 +213,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         error instanceof ShopApiError &&
         (error.status === 409 || error.status === 404)
       ) {
+        sessionStorage.removeItem('connectaCheckoutAttempt');
+        setHasCheckoutAttempt(false);
         await refreshProduct();
       }
     } finally {
@@ -221,8 +255,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         productLoading,
         productError,
         orderError,
-        receipt,
         isSubmitting,
+        hasCheckoutAttempt,
         dialogRef,
         selectOffer,
         order,

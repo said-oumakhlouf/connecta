@@ -27,10 +27,14 @@ ajouter son origine exacte à `CORS_ORIGINS` dans le backend et redémarrer celu
 2. Les prix de la landing page, de la fiche produit et du panier sont actualisés.
 3. Le client choisit Solo ou Duo et le nombre de paires/packs.
 4. Le formulaire demande son nom complet et son email.
-5. `POST /orders` transmet uniquement ces coordonnées, l'identifiant du produit et
-   le nombre réel de paires : un pack Duo correspond à deux unités.
-6. La confirmation affiche le numéro de commande, le total renvoyé par l'API et
-   le statut « En attente ». Le panier est vidé et le stock est actualisé.
+5. `POST /payments/checkout` transmet les coordonnées, l'identifiant du produit,
+   le nombre réel de paires et une clé de tentative. Le backend réserve le stock
+   et calcule les prix avant de créer une session Stripe en mode test.
+6. Le navigateur ouvre Stripe Checkout. `/paiement` vérifie ensuite le statut auprès
+   du backend : seul un paiement vérifié par Stripe confirme la commande.
+7. Une annulation expire d'abord la session Stripe puis restitue le stock. Une
+   réservation abandonnée expire après environ 31 minutes ; le backend la libère
+   au webhook ou lors de son contrôle périodique (toutes les 30 secondes).
 
 Le total affiché inclut automatiquement l'offre Duo pour les quantités paires et
 impaires : 1 = 35 €, 2 = 60 €, 3 = 95 €, 4 = 120 € avec les tarifs actuels.
@@ -41,9 +45,16 @@ En cas de stock insuffisant ou de produit modifié, le panier est conservé et s
 disponibilité est actualisée. Une requête échouée n'est pas relancée automatiquement.
 La validation est bloquée pendant l'envoi, le chargement et lorsque le stock est insuffisant.
 
-**Une validation crée une vraie commande et retire le stock en base.**
-Aucun paiement ni email automatique n'est envoyé. Le paiement et la livraison
-restent à connecter.
+**Cette intégration accepte uniquement les clés Stripe de test.** Aucune somme réelle
+n'est débitée. Sans les clés de test et le webhook configurés côté backend, le
+paiement est indisponible et aucun stock n'est réservé. Aucun email automatique
+n'est envoyé par CONNECTA. Les frais de livraison et les remboursements restent
+à développer avant une mise en vente réelle.
+
+Une réponse réseau perdue peut être réessayée avec le même panier et les mêmes
+coordonnées : la clé conservée dans l'onglet évite une seconde réservation.
+La page `/paiement?retour=1` permet de reprendre ou d'annuler une session connue.
+Voir [la configuration Stripe du backend](https://github.com/said-oumakhlouf/connecta-api#stripe-checkout--mode-test).
 
 ## Configuration de production
 
@@ -85,20 +96,20 @@ La session reste uniquement en mémoire, expire au bout de huit heures et néces
 une nouvelle connexion après rechargement de la page ou redémarrage de l'API.
 L'interface admin n'affiche ni le panier ni la barre mobile de commande.
 Les routes admin du backend vérifient la session avant de lire ou modifier des données.
-Une commande en attente peut être confirmée ou annulée. Une commande confirmée
-peut également être annulée. L’annulation demande une confirmation, devient
-définitive et remet les articles en stock une seule fois. Le stock affiché est
-actualisé après l’annulation. Confirmer ne valide pas un paiement.
+Les anciennes commandes sont identifiées « sans Stripe » et conservent les actions
+manuelles. Les nouvelles commandes en attente affichent l'expiration de leur
+réservation et peuvent être annulées après fermeture de leur session Stripe.
+Une commande payée en test est confirmée automatiquement et ne peut plus être
+annulée avec le bouton de remise en stock : il faudra un parcours de remboursement.
 
-Pour tester le réapprovisionnement, partir d'un produit actif à zéro, ajouter
-20 unités dans l'admin, puis revenir à la boutique : le produit doit être disponible.
-Une commande de deux unités laisse 18 en stock et apparaît dans l'admin après actualisation.
-La confirmer conserve 18 unités ; l’annuler remet le stock à 20 et désactive les actions.
+Pour tester le réapprovisionnement, ajouter 20 unités dans l'admin. Réserver deux
+unités laisse 18 disponibles ; annuler la session Stripe restitue les deux unités
+une seule fois, même si la demande d'annulation est répétée.
 
 ## Fichiers principaux
 
 - `components/shop/ShopProvider.tsx` : produit distant, état du panier et création de commande.
-- `components/shop/CartDialog.tsx` : formulaire, erreurs et confirmation.
+- `components/shop/CartDialog.tsx` : formulaire et préparation du paiement.
 - `lib/shop-api.ts` : appels HTTP typés et validation des réponses.
 - `lib/shop-pricing.ts` : estimation du total en centimes et affichage en euros.
 - `data/offers.ts` : contenu des offres et prix de présentation avant le chargement de l'API.

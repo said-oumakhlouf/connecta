@@ -5,6 +5,9 @@ export type AdminSession = { token: string; expiresAt: string };
 export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & {
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
   createdAt: string;
+  paymentStatus?: 'LEGACY' | 'UNPAID' | 'PAID' | 'EXPIRED';
+  reservedUntil?: string | null;
+  paidAt?: string | null;
   items: Array<ApiOrder['items'][number] & { productName: string }>;
 };
 export type AdminOrders = {
@@ -70,6 +73,10 @@ function isOrder(value: unknown): value is AdminOrder {
     ['PENDING', 'CONFIRMED', 'CANCELLED'].includes(String(value.status)) &&
     integer(value.total) &&
     date(value.createdAt) &&
+    (value.paymentStatus === undefined ||
+      ['LEGACY', 'UNPAID', 'PAID', 'EXPIRED'].includes(
+        String(value.paymentStatus),
+      )) &&
     Array.isArray(value.items) &&
     value.items.length > 0 &&
     value.items.every(
@@ -134,7 +141,7 @@ const messages: Record<number, string> = {
   400: 'Vérifiez la quantité (1 à 10 000), le statut ou le mois sélectionné.',
   401: 'Mot de passe incorrect ou session expirée. Reconnectez-vous.',
   404: 'Ce produit ou cette commande est introuvable. Actualisez les données.',
-  409: 'Action impossible : commande déjà annulée ou stock maximum dépassé. Actualisez les données.',
+  409: 'Action impossible : vérifiez le paiement, le statut de commande et le stock. Une commande payée nécessite un remboursement.',
   429: 'Trop de tentatives. Patientez 15 minutes avant de réessayer.',
   503: 'L’accès admin n’est pas configuré. Renseignez ADMIN_PASSWORD dans le backend et redémarrez-le.',
 };

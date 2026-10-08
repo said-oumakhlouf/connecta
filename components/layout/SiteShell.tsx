@@ -10,7 +10,11 @@ import ShopProvider from '@/components/shop/ShopProvider';
 
 export default function SiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if (pathname === '/admin' || pathname?.startsWith('/admin/'))
+  if (
+    pathname === '/admin' ||
+    pathname?.startsWith('/admin/') ||
+    pathname === '/paiement'
+  )
     return <>{children}</>;
   return (
     <ShopProvider>

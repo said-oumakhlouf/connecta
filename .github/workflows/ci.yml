@@ -14,5 +14,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - name: Verify admin static export
-        run: test -f out/admin.html
+      - name: Verify admin and payment static exports
+        run: |
+          test -f out/admin.html
+          test -f out/paiement.html

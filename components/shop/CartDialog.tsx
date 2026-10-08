@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Check, LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
@@ -21,8 +21,8 @@ export default function CartDialog() {
     productLoading,
     productError,
     orderError,
-    receipt,
     isSubmitting,
+    hasCheckoutAttempt,
     closeCart,
     submitOrder,
     refreshProduct,
@@ -36,8 +36,7 @@ export default function CartDialog() {
     !!product &&
     !productLoading &&
     !productError &&
-    !unavailable &&
-    !insufficientStock &&
+    (hasCheckoutAttempt || (!unavailable && !insufficientStock)) &&
     !isSubmitting;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -68,7 +67,7 @@ export default function CartDialog() {
               id="cart-title"
               className="mt-1 text-[26px] font-medium tracking-[-1.2px]"
             >
-              {receipt ? 'Commande enregistrée' : 'Votre panier'}
+              Votre panier
             </h2>
           </div>
           <button
@@ -82,48 +81,7 @@ export default function CartDialog() {
           </button>
         </div>
 
-        {receipt ? (
-          <div role="status" aria-live="polite">
-            <div className="mx-auto mb-5 mt-7 grid size-14 place-items-center rounded-full bg-[#edf2ff] text-[#235bfa]">
-              <Check size={25} />
-            </div>
-            <div className="text-center">
-              <h3 className="text-xl font-semibold">
-                Merci, {receipt.customerName}.
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-[#72767f]">
-                Votre commande de{' '}
-                {receipt.items.reduce((sum, item) => sum + item.quantity, 0)}{' '}
-                paire(s) a bien été enregistrée.
-              </p>
-            </div>
-            <dl className="mt-6 space-y-4 rounded-2xl bg-[#f7f8fa] p-4 text-sm">
-              <div>
-                <dt className="text-[#72767f]">Numéro de commande</dt>
-                <dd className="mt-1 break-all font-medium">{receipt.id}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#72767f]">Total</dt>
-                <dd className="font-semibold">{formatPrice(receipt.total)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-[#72767f]">Statut</dt>
-                <dd>En attente</dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-center text-xs leading-5 text-[#72767f]">
-              Aucun paiement n’a été effectué. Le paiement et la livraison
-              seront proposés lors d’une prochaine étape.
-            </p>
-            <button
-              type="button"
-              onClick={closeCart}
-              className="mt-6 flex w-full items-center justify-between rounded-full bg-[#17191d] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#235bfa]"
-            >
-              Continuer mes achats <ArrowRight size={15} />
-            </button>
-          </div>
-        ) : cart && cartOffer ? (
+        {cart && cartOffer ? (
           <form onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#f7f8fa] p-3 sm:gap-4 sm:p-4">
               <div className="h-18 w-18 shrink-0 overflow-hidden rounded-xl bg-white">
@@ -295,12 +253,22 @@ export default function CartDialog() {
                 {orderError}
               </p>
             )}
+            {hasCheckoutAttempt && (
+              <p className="mt-3 text-xs leading-5 text-[#72767f]">
+                Une tentative existe déjà. Réessayez avec les mêmes coordonnées
+                et quantités pour la reprendre, ou{' '}
+                <a href="/paiement?retour=1" className="underline">
+                  vérifiez votre réservation
+                </a>
+                .
+              </p>
+            )}
             <button
               type="submit"
               disabled={!canSubmit}
               className="mt-5 flex w-full items-center justify-between rounded-full bg-[#235bfa] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1645cf] disabled:cursor-default disabled:opacity-45"
             >
-              {isSubmitting ? 'Enregistrement…' : 'Enregistrer ma commande'}
+              {isSubmitting ? 'Préparation du paiement…' : 'Passer au paiement'}
               {isSubmitting ? (
                 <LoaderCircle size={17} className="animate-spin" />
               ) : (
@@ -308,7 +276,8 @@ export default function CartDialog() {
               )}
             </button>
             <p className="mt-3 text-center text-[11px] leading-5 text-[#8b9098]">
-              Commande enregistrée sans paiement à cette étape.
+              Paiement Stripe en mode test : aucun débit réel. Articles réservés
+              environ 30 minutes.
             </p>
             <button
               type="button"

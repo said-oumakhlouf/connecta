@@ -88,6 +88,15 @@ export default function OrdersView({
                   </span>
                 </div>
               </div>
+              <p className={styles.muted}>
+                {order.paymentStatus === 'PAID'
+                  ? 'Paiement Stripe confirmé · mode test'
+                  : order.paymentStatus === 'UNPAID'
+                    ? `Paiement en attente · réservation jusqu’au ${order.reservedUntil ? dateFormat.format(new Date(order.reservedUntil)) : 'délai prévu'}`
+                    : order.paymentStatus === 'EXPIRED'
+                      ? 'Réservation annulée · stock libéré'
+                      : 'Ancienne commande sans paiement Stripe'}
+              </p>
               <div className={styles.orderMeta}>
                 <time dateTime={order.createdAt}>
                   {dateFormat.format(new Date(order.createdAt))}
@@ -114,68 +123,73 @@ export default function OrdersView({
                   </div>
                 ))}
               </details>
-              {order.status !== 'CANCELLED' && (
-                <div className={styles.orderActions}>
-                  {cancellingId === order.id ? (
-                    <>
-                      <p>
-                        Annuler cette commande ? Les{' '}
-                        {order.items.reduce(
-                          (sum, item) => sum + item.quantity,
-                          0,
-                        )}{' '}
-                        unité(s) seront remises en stock. Cette action est
-                        définitive.
-                      </p>
-                      <button
-                        type="button"
-                        className={styles.cancelButton}
-                        disabled={loading}
-                        onClick={async () => {
-                          if (await onStatus(order.id, 'CANCELLED'))
-                            setCancellingId(null);
-                        }}
-                      >
-                        {pendingOrderId === order.id
-                          ? 'Annulation…'
-                          : 'Oui, annuler la commande'}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.secondary}
-                        disabled={loading}
-                        onClick={() => setCancellingId(null)}
-                      >
-                        Conserver la commande
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      {order.status === 'PENDING' && (
+              {order.status !== 'CANCELLED' &&
+                order.paymentStatus !== 'PAID' && (
+                  <div className={styles.orderActions}>
+                    {cancellingId === order.id ? (
+                      <>
+                        <p>
+                          Annuler cette commande ? Les{' '}
+                          {order.items.reduce(
+                            (sum, item) => sum + item.quantity,
+                            0,
+                          )}{' '}
+                          unité(s) seront remises en stock. Cette action est
+                          définitive.
+                        </p>
                         <button
                           type="button"
-                          className={styles.primary}
+                          className={styles.cancelButton}
                           disabled={loading}
-                          onClick={() => void onStatus(order.id, 'CONFIRMED')}
+                          onClick={async () => {
+                            if (await onStatus(order.id, 'CANCELLED'))
+                              setCancellingId(null);
+                          }}
                         >
                           {pendingOrderId === order.id
-                            ? 'Confirmation…'
-                            : 'Confirmer la commande'}
+                            ? 'Annulation…'
+                            : 'Oui, annuler la commande'}
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        className={styles.secondary}
-                        disabled={loading}
-                        onClick={() => setCancellingId(order.id)}
-                      >
-                        Annuler
-                      </button>
-                      <p>Le statut de commande ne valide pas un paiement.</p>
-                    </>
-                  )}
-                </div>
-              )}
+                        <button
+                          type="button"
+                          className={styles.secondary}
+                          disabled={loading}
+                          onClick={() => setCancellingId(null)}
+                        >
+                          Conserver la commande
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {order.status === 'PENDING' &&
+                          (order.paymentStatus === 'LEGACY' ||
+                            !order.paymentStatus) && (
+                            <button
+                              type="button"
+                              className={styles.primary}
+                              disabled={loading}
+                              onClick={() =>
+                                void onStatus(order.id, 'CONFIRMED')
+                              }
+                            >
+                              {pendingOrderId === order.id
+                                ? 'Confirmation…'
+                                : 'Confirmer la commande'}
+                            </button>
+                          )}
+                        <button
+                          type="button"
+                          className={styles.secondary}
+                          disabled={loading}
+                          onClick={() => setCancellingId(order.id)}
+                        >
+                          Annuler
+                        </button>
+                        <p>Le statut de commande ne valide pas un paiement.</p>
+                      </>
+                    )}
+                  </div>
+                )}
             </article>
           ))}
         </div>
