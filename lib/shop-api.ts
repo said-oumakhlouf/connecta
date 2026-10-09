@@ -147,7 +147,7 @@ const errorMessages: Record<number, string> = {
   400: 'Vérifiez votre nom, votre email et les quantités demandées.',
   404: 'Ce produit n’est plus disponible.',
   409: 'Le stock ou le tarif a changé. Vérifiez le panier avant de valider à nouveau.',
-  429: 'Trop de réservations. Patientez 15 minutes avant de recommencer.',
+  429: 'Trop de réservations. Patientez avant de recommencer.',
   503: 'Le paiement est momentanément indisponible. Aucune commande payée n’a été confirmée.',
 };
 
@@ -178,8 +178,14 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
       );
       if (!response.ok) {
+        const problem: unknown = await response.json().catch(() => null);
+        const reservationMessage = isRecord(problem) && problem.code === 'ACTIVE_RESERVATION'
+          ? 'Une réservation non payée existe déjà pour cet email. Reprenez votre paiement ou annulez la réservation avant de recommencer.'
+          : isRecord(problem) && problem.code === 'RESERVATION_RATE_LIMIT'
+            ? 'Maximum 3 nouvelles réservations en 31 minutes depuis cette connexion. Patientez ou reprenez votre réservation existante.'
+            : undefined;
         throw new ShopApiError(
-          errorMessages[response.status] ??
+          reservationMessage ?? errorMessages[response.status] ??
             'Le service de commande est momentanément indisponible.',
           response.status,
         );

@@ -1,4 +1,4 @@
-export const MAX_ORDER_UNITS = 100;
+export const MAX_ORDER_UNITS = 10;
 
 export function getMaxCartCount(stock: number, unitsPerOffer: number) {
   return Math.floor(Math.min(stock, MAX_ORDER_UNITS) / unitsPerOffer);

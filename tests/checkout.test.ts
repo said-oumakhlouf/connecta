@@ -93,3 +93,13 @@ test('retry keys survive a reload without storing customer details, and change w
   );
   assert(!JSON.stringify([...values.values()]).includes('private@example.com'));
 });
+
+test('checkout explains an existing reservation and the connection limit without trusting arbitrary error text', async () => {
+  for (const [status, code, expected] of [
+    [409, 'ACTIVE_RESERVATION', /réservation non payée/],
+    [429, 'RESERVATION_RATE_LIMIT', /3 nouvelles réservations en 31 minutes/],
+  ] as const) {
+    const api = createShopApi('http://api.test', async () => new Response(JSON.stringify({ code, message: 'untrusted text' }), { status }));
+    await assert.rejects(api.checkout({ customerName: 'Test', customerEmail: 'test@example.com' }, 1, 2, 'key'), expected);
+  }
+});

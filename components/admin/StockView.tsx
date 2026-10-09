@@ -1,6 +1,6 @@
 import { Boxes, LoaderCircle, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import type { ApiProduct } from '@/lib/shop-api';
+import type { AdminProduct } from '@/lib/admin-api';
 import { formatPrice } from '@/lib/shop-pricing';
 import styles from './AdminPanel.module.css';
 
@@ -12,7 +12,7 @@ function StockCard({
   pending,
   onRestock,
 }: {
-  product: ApiProduct;
+  product: AdminProduct;
   blocked: boolean;
   pending: boolean;
   onRestock: Restock;
@@ -46,8 +46,12 @@ function StockCard({
       </p>
       <div className={styles.stockCount}>
         <strong>{product.stock}</strong>
-        <span>unité{product.stock > 1 ? 's' : ''} en stock</span>
+        <span>unité{product.stock > 1 ? 's' : ''} disponible{product.stock > 1 ? 's' : ''}</span>
       </div>
+      <p className={styles.muted}>
+        {product.reservedUnits} unité(s) réservée(s) en attente de paiement.
+        Elles sont déjà déduites du stock disponible.
+      </p>
       <form onSubmit={submit} className={styles.restockForm}>
         <label htmlFor={`restock-${product.id}`}>Unités reçues à ajouter</label>
         <div>
@@ -92,7 +96,7 @@ export default function StockView({
   pendingId,
   onRestock,
 }: {
-  products: ApiProduct[] | null;
+  products: AdminProduct[] | null;
   blocked: boolean;
   pendingId: number | null;
   onRestock: Restock;

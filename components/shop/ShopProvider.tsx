@@ -18,7 +18,7 @@ import {
   type CustomerDetails,
 } from '@/lib/shop-api';
 import { checkoutAttempt } from '@/lib/checkout-attempt';
-import { getCartPrice, getMaxCartCount } from '@/lib/shop-pricing';
+import { getCartPrice, getMaxCartCount, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
   selectedOffer: OfferId;
@@ -91,7 +91,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         saved &&
         Number.isInteger(saved.quantity) &&
         saved.quantity! >= 1 &&
-        saved.quantity! <= 100
+        saved.quantity! <= MAX_ORDER_UNITS
       ) {
         setHasCheckoutAttempt(true);
         setCart({ id: 'solo', count: saved.quantity! });
@@ -171,7 +171,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     if (
       !product.active ||
       (!hasCheckoutAttempt && cart.count > maxCartCount) ||
-      cartCount < 1
+      cartCount < 1 || cartCount > MAX_ORDER_UNITS
     ) {
       setOrderError('La quantité demandée dépasse le stock disponible.');
       return;

@@ -243,3 +243,14 @@ test('an absent API address never sends admin credentials', async () => {
   await assert.rejects(api.login('password'), /adresse/);
   assert.equal(calls, 0);
 });
+
+test('admin separates available stock from reserved units and rejects invalid reservation counts', async () => {
+  const api = createAdminApi('http://api.test', async () => json([{ ...product, stock: 8, reservedUnits: 2 }]));
+  const result = await api.products(token);
+  assert.equal(result[0].stock, 8);
+  assert.equal(result[0].reservedUnits, 2);
+  for (const reservedUnits of [undefined, -1, '2']) {
+    const malformed = createAdminApi('http://api.test', async () => json([{ ...product, reservedUnits }]));
+    await assert.rejects(malformed.products(token), /incomplète/);
+  }
+});

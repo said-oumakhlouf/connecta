@@ -24,10 +24,10 @@ import {
   adminApi,
   AdminApiError,
   type AdminOrders,
+  type AdminProduct,
   type AdminSession,
   type AdminAnalytics,
 } from '@/lib/admin-api';
-import type { ApiProduct } from '@/lib/shop-api';
 import OrdersView from './OrdersView';
 import StockView from './StockView';
 import AnalyticsView from './AnalyticsView';
@@ -38,7 +38,7 @@ export default function AdminPanel() {
   const [password, setPassword] = useState('');
   const [tab, setTab] = useState<'orders' | 'stock'>('orders');
   const [orders, setOrders] = useState<AdminOrders | null>(null);
-  const [products, setProducts] = useState<ApiProduct[] | null>(null);
+  const [products, setProducts] = useState<AdminProduct[] | null>(null);
   const [month, setMonth] = useState(() => {
     const parts = new Intl.DateTimeFormat('fr-FR', {
       timeZone: 'Europe/Paris',
@@ -204,7 +204,7 @@ export default function AdminPanel() {
       setProducts(
         (current) =>
           current?.map((product) =>
-            product.id === updated.id ? updated : product,
+            product.id === updated.id ? { ...updated, reservedUnits: product.reservedUnits } : product,
           ) ?? null,
       );
       setSuccess(
@@ -372,7 +372,7 @@ export default function AdminPanel() {
           </div>
           <div className={styles.stat}>
             <Boxes size={19} />
-            <span>Unités en stock</span>
+            <span>Unités disponibles</span>
             <strong>
               {products?.reduce((sum, product) => sum + product.stock, 0) ??
                 '—'}
@@ -382,6 +382,12 @@ export default function AdminPanel() {
                 ? `${products.length} produit${products.length > 1 ? 's' : ''} au catalogue`
                 : 'Chargement du catalogue'}
             </small>
+          </div>
+          <div className={styles.stat}>
+            <Boxes size={19} />
+            <span>Unités réservées</span>
+            <strong>{products?.reduce((sum, product) => sum + product.reservedUnits, 0) ?? '—'}</strong>
+            <small>En attente de paiement Stripe</small>
           </div>
           <div className={styles.stat}>
             <CheckCircle2 size={19} />

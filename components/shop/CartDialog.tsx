@@ -6,7 +6,7 @@ import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { PRODUCTS } from '@/data/products';
-import { formatPrice } from '@/lib/shop-pricing';
+import { formatPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 export default function CartDialog() {
   const {
@@ -33,6 +33,7 @@ export default function CartDialog() {
   const unavailable = product && (!product.active || product.stock === 0);
   const insufficientStock = product && cartCount > product.stock;
   const canSubmit =
+    cartCount <= MAX_ORDER_UNITS &&
     !!product &&
     !productLoading &&
     !productError &&
@@ -153,6 +154,10 @@ export default function CartDialog() {
                   ? `${product.stock} paire(s) en stock`
                   : null}
             </div>
+            <p className="mt-2 text-xs text-[#72767f]">
+              Maximum 10 paires par commande (5 packs Duo). Une seule réservation
+              non payée par email : annulez-la avant de changer votre commande.
+            </p>
             {(productError || unavailable || insufficientStock) && (
               <div
                 role="alert"

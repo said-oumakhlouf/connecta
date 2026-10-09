@@ -39,7 +39,7 @@ ajouter son origine exacte à `CORS_ORIGINS` dans le backend et redémarrer celu
 Le total affiché inclut automatiquement l'offre Duo pour les quantités paires et
 impaires : 1 = 35 €, 2 = 60 €, 3 = 95 €, 4 = 120 € avec les tarifs actuels.
 Les prix et remises de la commande sont calculés par le backend.
-Le panier permet de commander le stock disponible, avec un maximum de 100 paires
+Le panier permet de commander le stock disponible, avec un maximum de 10 paires
 par commande : 20 paires en stock autorisent 20 Solo ou 10 packs Duo.
 En cas de stock insuffisant ou de produit modifié, le panier est conservé et sa
 disponibilité est actualisée. Une requête échouée n'est pas relancée automatiquement.
@@ -128,3 +128,13 @@ d'erreur sans créer de commandes réelles. GitHub Actions exécute ces tests et
 Pour vérifier le parcours complet sur votre ordinateur, laisser le backend tourner,
 ouvrir le site, choisir le Duo, renseigner un nom et un email de test, puis valider.
 Le total confirmé doit être de 60 € et le stock doit diminuer de deux unités.
+
+Chaque email ne peut avoir qu’une réservation non payée. Le backend limite
+aussi les nouvelles réservations à 3 par connexion sur 31 minutes. Le panier
+explique la limite de 10 paires / 5 packs Duo et les erreurs donnent les étapes
+pour reprendre ou annuler une réservation existante.
+
+L’admin affiche séparément les unités disponibles et réservées, globalement et
+par produit. `reservedUnits` vient du backend et inclut les réservations échues
+qui attendent encore la vérification Stripe. Actualisation automatique toutes
+les 15 secondes tant que l’onglet est visible.

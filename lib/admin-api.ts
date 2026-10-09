@@ -1,6 +1,8 @@
 import { API_BASE_URL } from './api-config';
 import { isProduct, type ApiProduct, type ApiOrder } from './shop-api';
 
+export type AdminProduct = ApiProduct & { reservedUnits: number };
+
 export type AdminSession = { token: string; expiresAt: string };
 export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & {
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
@@ -220,8 +222,9 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
           method: 'GET',
           headers: auth(token),
         },
-        (value): value is ApiProduct[] =>
-          Array.isArray(value) && value.every(isProduct),
+        (value): value is AdminProduct[] =>
+          Array.isArray(value) && value.every((product: unknown) =>
+            record(product) && integer(product.reservedUnits) && isProduct(product)),
       ),
     analytics: (token: string, month: string) =>
       request(
