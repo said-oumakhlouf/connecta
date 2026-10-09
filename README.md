@@ -130,7 +130,8 @@ ouvrir le site, choisir le Duo, renseigner un nom et un email de test, puis vali
 Le total confirmé doit être de 60 € et le stock doit diminuer de deux unités.
 
 Chaque email ne peut avoir qu’une réservation non payée. Le backend limite
-aussi les nouvelles réservations à 3 par connexion sur 31 minutes. Le panier
+aussi les réservations non payées ou annulées à 3 par connexion sur 31 minutes.
+Les commandes payées et vérifiées par Stripe sont exclues de ce quota. Le panier
 explique la limite de 10 paires / 5 packs Duo et les erreurs donnent les étapes
 pour reprendre ou annuler une réservation existante.
 

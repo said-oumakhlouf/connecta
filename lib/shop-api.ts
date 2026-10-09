@@ -182,7 +182,7 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         const reservationMessage = isRecord(problem) && problem.code === 'ACTIVE_RESERVATION'
           ? 'Une réservation non payée existe déjà pour cet email. Reprenez votre paiement ou annulez la réservation avant de recommencer.'
           : isRecord(problem) && problem.code === 'RESERVATION_RATE_LIMIT'
-            ? 'Maximum 3 nouvelles réservations en 31 minutes depuis cette connexion. Patientez ou reprenez votre réservation existante.'
+            ? 'Maximum 3 réservations non payées ou annulées en 31 minutes depuis cette connexion. Patientez ou reprenez votre réservation existante.'
             : undefined;
         throw new ShopApiError(
           reservationMessage ?? errorMessages[response.status] ??
