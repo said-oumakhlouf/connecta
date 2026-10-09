@@ -22,9 +22,13 @@ export default function ReservationStatus({
     return (
       <p className={styles.muted}>
         {order.paymentStatus === 'PAID'
-          ? 'Paiement Stripe confirmé · mode test'
+          ? customer
+            ? 'Paiement confirmé'
+            : 'Paiement Stripe confirmé · mode test'
           : order.paymentStatus === 'EXPIRED'
-            ? 'Réservation terminée · stock restitué (annulation ou expiration)'
+            ? customer
+              ? 'Réservation terminée'
+              : 'Réservation terminée · stock restitué (annulation ou expiration)'
             : customer
               ? 'Ancienne commande · contactez-nous pour son suivi'
               : 'Ancienne commande sans paiement Stripe'}
@@ -35,8 +39,10 @@ export default function ReservationStatus({
   return (
     <div className={styles.reservation}>
       <p>
-        <Clock3 size={16} aria-hidden="true" /> Paiement en attente · stock
-        réservé
+        <Clock3 size={16} aria-hidden="true" />{' '}
+        {customer
+          ? 'Paiement en attente'
+          : 'Paiement en attente · stock réservé'}
       </p>
       <strong>
         {remaining

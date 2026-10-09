@@ -348,6 +348,13 @@ export default function MemberPanel() {
                         <h2 className="mt-2 font-semibold">
                           {order.items[0].productName}
                         </h2>
+                        <p className="mt-1 text-xs text-[#72767f]">
+                          Réservation n°{' '}
+                          {order.id
+                            .replaceAll('-', '')
+                            .slice(0, 12)
+                            .toUpperCase()}
+                        </p>
                       </div>
                       <strong className="whitespace-nowrap text-lg">
                         {formatPrice(order.total)}
@@ -369,9 +376,6 @@ export default function MemberPanel() {
                       <summary className="cursor-pointer font-medium">
                         Détail de ma commande
                       </summary>
-                      <p className="my-3 break-all text-[10px] text-[#72767f]">
-                        N° {order.id}
-                      </p>
                       {order.items.map((item) => (
                         <div
                           key={item.productId}
