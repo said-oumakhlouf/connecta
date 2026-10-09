@@ -85,11 +85,18 @@ export default function AdminPanel() {
   );
 
   const load = useCallback(
-    async (token: string, page = 1, selectedMonth = monthRef.current) => {
+    async (
+      token: string,
+      page = 1,
+      selectedMonth = monthRef.current,
+      silent = false,
+    ) => {
       const sequence = ++requestSequence.current;
-      setLoading(true);
-      setError('');
-      setSuccess('');
+      if (!silent) {
+        setLoading(true);
+        setError('');
+        setSuccess('');
+      }
       try {
         const [nextOrders, nextProducts, nextAnalytics] = await Promise.all([
           adminApi.orders(token, page),
@@ -111,7 +118,7 @@ export default function AdminPanel() {
         )
           reportError(problem);
       } finally {
-        if (sequence === requestSequence.current) setLoading(false);
+        if (!silent && sequence === requestSequence.current) setLoading(false);
       }
     },
     [reportError],
@@ -129,6 +136,18 @@ export default function AdminPanel() {
       requestSequence.current++;
     };
   }, [session, load, endSession]);
+
+  useEffect(() => {
+    if (!session || loading) return;
+    let refreshing = false;
+    const timer = setInterval(() => {
+      if (refreshing || submitting.current || document.hidden) return;
+      refreshing = true;
+      void load(session.token, orders?.page ?? 1, monthRef.current, true)
+        .finally(() => { refreshing = false; });
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [session, loading, orders?.page, load]);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -174,6 +193,7 @@ export default function AdminPanel() {
       return false;
     }
     submitting.current = true;
+    requestSequence.current++;
     setPendingId(productId);
     setError('');
     setSuccess('');
@@ -206,6 +226,7 @@ export default function AdminPanel() {
   ): Promise<boolean> {
     if (!session || submitting.current || loading) return false;
     submitting.current = true;
+    requestSequence.current++;
     setPendingOrderId(orderId);
     setError('');
     setSuccess('');

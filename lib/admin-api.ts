@@ -77,6 +77,9 @@ function isOrder(value: unknown): value is AdminOrder {
       ['LEGACY', 'UNPAID', 'PAID', 'EXPIRED'].includes(
         String(value.paymentStatus),
       )) &&
+    (value.reservedUntil === undefined || value.reservedUntil === null ||
+      date(value.reservedUntil)) &&
+    (value.paidAt === undefined || value.paidAt === null || date(value.paidAt)) &&
     Array.isArray(value.items) &&
     value.items.length > 0 &&
     value.items.every(

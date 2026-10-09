@@ -186,6 +186,13 @@ test('order status changes authenticate and validate the returned order', async 
     malformed.updateOrderStatus(token, 'order-id', 'CONFIRMED'),
     /incomplète/,
   );
+  const invalidDeadline = createAdminApi('http://api.test', async () =>
+    json({ ...order, paymentStatus: 'UNPAID', reservedUntil: 'invalid' }),
+  );
+  await assert.rejects(
+    invalidDeadline.updateOrderStatus(token, 'order-id', 'CANCELLED'),
+    /incomplète/,
+  );
 });
 
 for (const status of [401, 409, 429, 503]) {

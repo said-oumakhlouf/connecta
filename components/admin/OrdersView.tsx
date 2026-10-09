@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, ClipboardList } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import ReservationStatus from './ReservationStatus';
 import type { AdminOrders } from '@/lib/admin-api';
 import { formatPrice } from '@/lib/shop-pricing';
 import styles from './AdminPanel.module.css';
@@ -28,6 +29,14 @@ export default function OrdersView({
   pendingOrderId: string | null;
   onStatus: (id: string, status: 'CONFIRMED' | 'CANCELLED') => Promise<boolean>;
 }) {
+  const [now, setNow] = useState(() => Date.now());
+  const hasReservations = data?.orders.some((order) => order.paymentStatus === 'UNPAID');
+  useEffect(() => {
+    if (!hasReservations) return;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [hasReservations]);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const pages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   return (
@@ -40,8 +49,8 @@ export default function OrdersView({
         <div>
           <h2 id="orders-title">Les dernières commandes</h2>
           <p>
-            Confirmez les commandes reçues ou annulez-les pour remettre les
-            articles en stock.
+            Suivez les paiements et les réservations de stock.
+            Les données sont actualisées automatiquement toutes les 15 secondes.
           </p>
         </div>
       </div>
@@ -88,15 +97,7 @@ export default function OrdersView({
                   </span>
                 </div>
               </div>
-              <p className={styles.muted}>
-                {order.paymentStatus === 'PAID'
-                  ? 'Paiement Stripe confirmé · mode test'
-                  : order.paymentStatus === 'UNPAID'
-                    ? `Paiement en attente · réservation jusqu’au ${order.reservedUntil ? dateFormat.format(new Date(order.reservedUntil)) : 'délai prévu'}`
-                    : order.paymentStatus === 'EXPIRED'
-                      ? 'Réservation annulée · stock libéré'
-                      : 'Ancienne commande sans paiement Stripe'}
-              </p>
+              <ReservationStatus order={order} now={now} />
               <div className={styles.orderMeta}>
                 <time dateTime={order.createdAt}>
                   {dateFormat.format(new Date(order.createdAt))}
