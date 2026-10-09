@@ -139,3 +139,30 @@ L’admin affiche séparément les unités disponibles et réservées, globaleme
 par produit. `reservedUnits` vient du backend et inclut les réservations échues
 qui attendent encore la vérification Stripe. Actualisation automatique toutes
 les 15 secondes tant que l’onglet est visible.
+
+## Espace membre
+
+Un accès « Mon compte » est disponible dans le header, vers `/compte`.
+Le client demande un lien par email, puis confirme sa connexion depuis le lien
+reçu. Aucun mot de passe ni jeton de session n’est enregistré dans localStorage
+ou sessionStorage : l’API utilise un cookie HttpOnly. Le lien arrive dans le
+fragment de l’URL, immédiatement retiré de la barre d’adresse, puis consommé
+uniquement après clic sur « Ouvrir mon espace ».
+
+La page affiche les commandes de l’email vérifié, leurs montants, détails et
+réservations avec un compteur. Elle propose de reprendre le paiement ou
+d’annuler une réservation UNPAID, avec confirmation. Les données sont relues
+toutes les 15 secondes dans l’onglet visible. Les commandes payées n’offrent pas
+ces actions. La livraison et le numéro de suivi restent à ajouter.
+
+Pour tester : appliquer la migration du backend, définir
+`MEMBER_EMAIL_MODE=console` dans son `.env`, puis redémarrer le backend.
+Saisir sur `/compte` l’email d’une commande existante et ouvrir le lien affiché
+dans le terminal API. Ce mode ne transmet aucun email ; l’écran indique
+clairement qu’il s’agit d’un test local. Pour l’envoi réel, configurer Resend
+côté backend (voir son README).
+
+Garder le même hôte pour le front et l’API : si le site est ouvert sur
+`http://localhost:3000`, définir `NEXT_PUBLIC_API_URL=http://localhost:3001`.
+Le fetch membre inclut les credentials ; le backend doit autoriser cette origine
+avec CORS et partager le même site que le frontend en production.

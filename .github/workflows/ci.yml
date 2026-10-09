@@ -18,3 +18,4 @@ jobs:
         run: |
           test -f out/admin.html
           test -f out/paiement.html
+          test -f out/compte.html

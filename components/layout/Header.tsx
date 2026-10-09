@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, ShoppingBag, X } from 'lucide-react';
+import { Menu, ShoppingBag, UserRound, X } from 'lucide-react';
 import { useState } from 'react';
 
 import Container from '@/components/layout/Container';
@@ -48,6 +48,9 @@ export default function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2.5 sm:gap-3 lg:ml-0 lg:gap-5">
+          <a href="/compte" aria-label="Mon compte et mes commandes" className="grid size-9 place-items-center rounded-full transition hover:bg-[#f5f6f8]">
+            <UserRound size={19} strokeWidth={1.7} />
+          </a>
           <button
             type="button"
             onClick={openCart}
