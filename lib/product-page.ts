@@ -100,3 +100,46 @@ export function getProductJsonLd(images: readonly string[], siteUrl?: string) {
 export function serializeJsonLd(value: unknown) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
+
+export const PRODUCT_PAGE_PATH = '/produit/hoco-ew75';
+
+export function isProductPagePath(pathname: string | null | undefined) {
+  return (pathname ?? '').replace(/\/+$/, '') === PRODUCT_PAGE_PATH;
+}
+
+export type OrderCtaInput = {
+  stock: StockState;
+  /** Units required by the selected offer (1 for Solo, 2 for Duo). */
+  quantity: number;
+  isSubmitting: boolean;
+  /** True only once the product (and therefore its prices) came from the API. */
+  productLoaded: boolean;
+};
+
+export type OrderCta = {
+  status: 'submitting' | 'checking' | 'ready' | 'insufficient' | 'unavailable';
+  disabled: boolean;
+  /** Whether the displayed price comes from the API rather than the static fallback. */
+  priceValidated: boolean;
+  /** Short availability hint for compact surfaces (null when ready). */
+  hint: string | null;
+};
+
+/** Single source of truth for every "Commander" button of the product page. */
+export function getOrderCta({ stock, quantity, isSubmitting, productLoaded }: OrderCtaInput): OrderCta {
+  const priceValidated = productLoaded;
+  if (isSubmitting)
+    return { status: 'submitting', disabled: true, priceValidated, hint: 'Commande en cours…' };
+  if (stock.kind === 'loading')
+    return { status: 'checking', disabled: true, priceValidated, hint: 'Vérification du stock…' };
+  if (canOrderUnits(stock, quantity))
+    return { status: 'ready', disabled: false, priceValidated, hint: null };
+  if (stock.kind === 'available' || stock.kind === 'low')
+    return { status: 'insufficient', disabled: true, priceValidated, hint: 'Stock insuffisant pour cette offre' };
+  return {
+    status: 'unavailable',
+    disabled: true,
+    priceValidated,
+    hint: stock.kind === 'out' ? 'Rupture de stock' : stock.message,
+  };
+}

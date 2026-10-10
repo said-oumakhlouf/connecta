@@ -21,6 +21,7 @@ import { PRODUCTS } from '@/data/products';
 import {
   canOrderUnits,
   getOfferSavings,
+  getOrderCta,
   getProductSpecs,
   getStockState,
   type StockState,
@@ -98,7 +99,12 @@ export default function ProductPage() {
   const duo = offers.duo;
   const duoSavings = getOfferSavings(solo.price, duo.price, duo.quantity);
   const current = offers[selectedOffer];
-  const canOrderCurrent = canOrderUnits(stock, current.quantity);
+  const cta = getOrderCta({
+    stock,
+    quantity: current.quantity,
+    isSubmitting,
+    productLoaded: pricesReady,
+  });
 
   const offerCards: { id: OfferId; badge?: string; note: string }[] = [
     { id: 'solo', note: 'Une paire' },
@@ -112,15 +118,16 @@ export default function ProductPage() {
     },
   ];
 
-  const ctaLabel = isSubmitting
-    ? 'Commande en cours…'
-    : stock.kind === 'loading'
-      ? 'Vérification…'
-      : canOrderCurrent
-        ? selectedOffer === 'duo'
-          ? 'Commander le Duo'
-          : 'Commander une paire'
-        : 'Indisponible';
+  const ctaLabel =
+    cta.status === 'submitting'
+      ? 'Commande en cours…'
+      : cta.status === 'checking'
+        ? 'Vérification…'
+        : cta.status === 'ready'
+          ? selectedOffer === 'duo'
+            ? 'Commander le Duo'
+            : 'Commander une paire'
+          : 'Indisponible';
 
   return (
     <main className="min-h-screen bg-white pb-24 text-[#17191d] md:pb-0">
@@ -228,7 +235,7 @@ export default function ProductPage() {
             <button
               type="button"
               onClick={() => order(selectedOffer)}
-              disabled={!canOrderCurrent || isSubmitting}
+              disabled={cta.disabled}
               className="mt-6 w-full rounded-full bg-[#17191d] px-6 py-4.5 text-xs font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#235bfa] disabled:cursor-not-allowed disabled:bg-[#c9ccd2] disabled:hover:translate-y-0"
             >
               {ctaLabel}

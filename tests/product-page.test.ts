@@ -4,9 +4,11 @@ import {
   LOW_STOCK_THRESHOLD,
   canOrderUnits,
   getOfferSavings,
+  getOrderCta,
   getProductJsonLd,
   getProductSpecs,
   getStockState,
+  isProductPagePath,
   serializeJsonLd,
 } from '../lib/product-page';
 import { PRODUCTS } from '../data/products';
@@ -57,4 +59,33 @@ test('JSON-LD never freezes price or stock and is safe to inline', () => {
   assert.ok(!/"offers"|"price"|"availability"/.test(json));
   assert.ok(!serializeJsonLd({ x: '</script><script>' }).includes('<'));
   assert.equal('url' in getProductJsonLd(['/a.webp']), false);
+});
+
+test('order CTA blocks loading, API errors, inactive products and insufficient stock', () => {
+  const cta = (stock: ReturnType<typeof getStockState>, quantity = 1, isSubmitting = false, productLoaded = true) =>
+    getOrderCta({ stock, quantity, isSubmitting, productLoaded });
+
+  const loading = cta(getStockState({ loading: true, error: null, product: null }), 1, false, false);
+  assert.deepEqual([loading.status, loading.disabled, loading.priceValidated], ['checking', true, false]);
+
+  const failed = cta(getStockState({ loading: false, error: 'API indisponible', product: null }), 1, false, false);
+  assert.deepEqual([failed.status, failed.disabled, failed.priceValidated, failed.hint], ['unavailable', true, false, 'API indisponible']);
+
+  assert.equal(cta(getStockState(live(9, false))).status, 'unavailable');
+  assert.deepEqual([cta(getStockState(live(0))).status, cta(getStockState(live(0))).hint], ['unavailable', 'Rupture de stock']);
+
+  const duoWithOne = cta(getStockState(live(1)), 2);
+  assert.deepEqual([duoWithOne.status, duoWithOne.disabled], ['insufficient', true]);
+  assert.deepEqual([cta(getStockState(live(1)), 1).status, cta(getStockState(live(1)), 1).disabled], ['ready', false]);
+  assert.equal(cta(getStockState(live(2)), 2).disabled, false);
+
+  const submitting = cta(getStockState(live(5)), 1, true);
+  assert.deepEqual([submitting.status, submitting.disabled], ['submitting', true]);
+});
+
+test('mobile guards apply only to the product page path', () => {
+  assert.equal(isProductPagePath('/produit/hoco-ew75'), true);
+  assert.equal(isProductPagePath('/produit/hoco-ew75/'), true);
+  for (const path of ['/', '/compte', '/produit', '/produit/hoco-ew75-x', null, undefined])
+    assert.equal(isProductPagePath(path), false);
 });
