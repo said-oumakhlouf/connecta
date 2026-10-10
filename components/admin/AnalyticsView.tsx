@@ -45,7 +45,7 @@ export default function AnalyticsView({
       </div>
       <div className={styles.monthStats}>
         <div>
-          <span>Montant des commandes</span>
+          <span>Commandes, livraison incluse</span>
           <strong>{data ? formatPrice(data.amount) : '—'}</strong>
           <small>En attente + confirmées</small>
         </div>
@@ -62,7 +62,7 @@ export default function AnalyticsView({
         <div>
           <span>Panier moyen</span>
           <strong>{data ? formatPrice(data.averageOrder) : '—'}</strong>
-          <small>Montant moyen par commande</small>
+          <small>Livraison incluse</small>
         </div>
       </div>
       {data && (

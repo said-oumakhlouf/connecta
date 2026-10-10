@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import ShippingFields from './ShippingFields';
+import { shopApi } from '@/lib/shop-api';
+import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
@@ -30,9 +33,27 @@ export default function CartDialog() {
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({ country: 'FR', line1: '', line2: '', city: '', postalCode: '', region: '' });
+  const [shippingOptions, setShippingOptions] = useState<ShippingOptions | null>(null);
+  const [shippingError, setShippingError] = useState('');
+  const [shippingRefresh, setShippingRefresh] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setShippingError('');
+    setShippingOptions(null);
+    void shopApi.shippingOptions().then(options => {
+      if (!active) return;
+      setShippingOptions(options);
+      setShippingAddress(current => options.destinations.some(d => d.country === current.country) || !options.destinations[0]
+        ? current : { ...current, country: options.destinations[0].country, postalCode: '', region: options.destinations[0].country === 'CA' ? 'QC' : '' });
+    }).catch(() => { if (active) setShippingError('Impossible de charger les frais de livraison.'); });
+    return () => { active = false; };
+  }, [shippingRefresh]);
+  const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
   const unavailable = product && (!product.active || product.stock === 0);
   const insufficientStock = product && cartCount > product.stock;
   const canSubmit =
+    shippingFee !== undefined &&
     cartCount <= MAX_ORDER_UNITS &&
     !!product &&
     !productLoading &&
@@ -42,7 +63,8 @@ export default function CartDialog() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void submitOrder({ customerName, customerEmail });
+    if (shippingFee === undefined) return;
+    void submitOrder({ customerName, customerEmail, shippingAddress, expectedShippingFee: shippingFee });
   }
 
   return (
@@ -191,9 +213,9 @@ export default function CartDialog() {
               )}
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="block text-[#72767f]">Total</span>
+                  <span className="block text-[#72767f]">Sous-total des articles</span>
                   <span className="mt-1 block text-[10px] text-[#a0a5ad]">
-                    Hors livraison
+                    Livraison calculée selon la destination
                   </span>
                 </div>
                 <strong className="text-[30px] font-semibold tracking-[-1.5px]">
@@ -249,6 +271,17 @@ export default function CartDialog() {
                 />
               </div>
             </fieldset>
+
+            <ShippingFields address={shippingAddress} options={shippingOptions} onChange={setShippingAddress} disabled={isSubmitting || !shippingOptions} />
+            <div className="mt-5 space-y-3 rounded-2xl bg-[#f7f8fa] p-4 text-sm" aria-live="polite">
+              <div className="flex justify-between gap-3"><span>Livraison</span><strong>{shippingFee === undefined ? 'Indisponible' : formatPrice(shippingFee)}</strong></div>
+              <div className="flex justify-between gap-3 border-t border-[#e0e3e8] pt-3 text-lg"><span>Total à payer</span><strong>{shippingFee === undefined ? '—' : formatPrice(cartTotal + shippingFee)}</strong></div>
+              <p className="text-xs text-[#72767f]">Montants en euros, livraison incluse.</p>
+              {shippingOptions?.provisional && <p className="text-xs text-[#72767f]">Tarifs de livraison provisoires pour les essais.</p>}
+              {shippingError && <p role="alert" className="text-[#ae302a]">{shippingError}</p>}
+              {shippingOptions?.destinations.length === 0 && <p>Aucune destination disponible pour le moment.</p>}
+              <button type="button" disabled={isSubmitting} className="text-xs underline" onClick={() => setShippingRefresh(v => v + 1)}>Actualiser les frais de livraison</button>
+            </div>
 
             {orderError && (
               <p

@@ -1,10 +1,11 @@
+import { isShippingOrder, type ShippingOrder, type FulfillmentUpdate } from './shipping';
 import { API_BASE_URL } from './api-config';
 import { isProduct, type ApiProduct, type ApiOrder } from './shop-api';
 
 export type AdminProduct = ApiProduct & { reservedUnits: number };
 
 export type AdminSession = { token: string; expiresAt: string };
-export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & {
+export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & ShippingOrder & {
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
   createdAt: string;
   paymentStatus?: 'LEGACY' | 'UNPAID' | 'PAID' | 'EXPIRED';
@@ -74,6 +75,7 @@ function isOrder(value: unknown): value is AdminOrder {
     typeof value.customerEmail === 'string' &&
     ['PENDING', 'CONFIRMED', 'CANCELLED'].includes(String(value.status)) &&
     integer(value.total) &&
+    isShippingOrder(value) &&
     date(value.createdAt) &&
     (value.paymentStatus === undefined ||
       ['LEGACY', 'UNPAID', 'PAID', 'EXPIRED'].includes(
@@ -143,10 +145,10 @@ function isAnalytics(value: unknown): value is AdminAnalytics {
 }
 
 const messages: Record<number, string> = {
-  400: 'Vérifiez la quantité (1 à 10 000), le statut ou le mois sélectionné.',
+  400: 'Vérifiez les champs saisis, le statut et le numéro de suivi.',
   401: 'Mot de passe incorrect ou session expirée. Reconnectez-vous.',
   404: 'Ce produit ou cette commande est introuvable. Actualisez les données.',
-  409: 'Action impossible : vérifiez le paiement, le statut de commande et le stock. Une commande payée nécessite un remboursement.',
+  409: 'Action impossible : actualisez et vérifiez le paiement, l’adresse et l’étape de livraison. Une commande payée nécessite un remboursement pour être annulée.',
   429: 'Trop de tentatives. Patientez 15 minutes avant de réessayer.',
   503: 'L’accès admin n’est pas configuré. Renseignez ADMIN_PASSWORD dans le backend et redémarrez-le.',
 };
@@ -250,6 +252,11 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         isOrder,
       ),
+    updateFulfillment: (token: string, orderId: string, update: FulfillmentUpdate) =>
+      request(`/admin/orders/${encodeURIComponent(orderId)}/fulfillment`, {
+        method: 'POST', headers: { ...auth(token), 'Content-Type': 'application/json' },
+        body: JSON.stringify(update),
+      }, isOrder),
     restock: (token: string, productId: number, quantity: number) =>
       request(
         `/admin/products/${productId}/restock`,

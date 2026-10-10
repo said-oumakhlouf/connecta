@@ -1,3 +1,6 @@
+import DeliveryDetails from '@/components/orders/DeliveryDetails';
+import FulfillmentControls from './FulfillmentControls';
+import { shortReference, type FulfillmentUpdate } from '@/lib/shipping';
 import { ArrowLeft, ArrowRight, ClipboardList } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReservationStatus from './ReservationStatus';
@@ -22,11 +25,13 @@ export default function OrdersView({
   onPage,
   pendingOrderId,
   onStatus,
+  onFulfillment,
 }: {
   data: AdminOrders | null;
   loading: boolean;
   onPage: (page: number) => void;
   pendingOrderId: string | null;
+  onFulfillment: (id: string, update: FulfillmentUpdate) => Promise<boolean>;
   onStatus: (id: string, status: 'CONFIRMED' | 'CANCELLED') => Promise<boolean>;
 }) {
   const [now, setNow] = useState(() => Date.now());
@@ -109,7 +114,7 @@ export default function OrdersView({
               </div>
               <details className={styles.details}>
                 <summary>Détail de la commande</summary>
-                <p className={styles.orderId}>N° {order.id}</p>
+                <p className={styles.orderId}>Réservation n° {shortReference(order.id)}</p>
                 {order.items.map((item) => (
                   <div key={item.productId} className={styles.orderItem}>
                     <div>
@@ -123,7 +128,9 @@ export default function OrdersView({
                     <strong>{formatPrice(item.lineTotal)}</strong>
                   </div>
                 ))}
+                <DeliveryDetails order={order} />
               </details>
+              <FulfillmentControls order={order} disabled={loading} onUpdate={onFulfillment} />
               {order.status !== 'CANCELLED' &&
                 order.paymentStatus !== 'PAID' && (
                   <div className={styles.orderActions}>

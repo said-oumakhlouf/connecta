@@ -1,3 +1,4 @@
+import { isShippingOptions, type ShippingAddress } from './shipping';
 import { API_BASE_URL } from './api-config';
 
 export type ApiProduct = {
@@ -26,6 +27,8 @@ export type ApiOrder = {
 };
 
 export type CustomerDetails = {
+  shippingAddress?: ShippingAddress;
+  expectedShippingFee?: number;
   customerName: string;
   customerEmail: string;
 };
@@ -38,6 +41,7 @@ export type CheckoutSession = {
   testMode: true;
 };
 export type CheckoutStatus = {
+  shippingFee?: number;
   orderId: string;
   total: number;
   paymentStatus: 'UNPAID' | 'PAID' | 'EXPIRED';
@@ -79,6 +83,7 @@ function isCheckoutStatus(value: unknown): value is CheckoutStatus {
     typeof value.orderId === 'string' &&
     value.orderId.length > 0 &&
     isAmount(value.total) &&
+    (value.shippingFee === undefined || (isAmount(value.shippingFee) && Number(value.shippingFee) <= Number(value.total))) &&
     ['UNPAID', 'PAID', 'EXPIRED'].includes(String(value.paymentStatus)) &&
     typeof value.expiresAt === 'string' &&
     Number.isFinite(Date.parse(value.expiresAt)) &&
@@ -185,7 +190,7 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
             ? 'Maximum 3 réservations non payées ou annulées en 31 minutes depuis cette connexion. Patientez ou reprenez votre réservation existante.'
             : undefined;
         throw new ShopApiError(
-          reservationMessage ?? errorMessages[response.status] ??
+          (isRecord(problem) && problem.code === 'SHIPPING_RATE_CHANGED' ? 'Le tarif de livraison a changé. Actualisez les frais avant de payer.' : reservationMessage) ?? errorMessages[response.status] ??
             'Le service de commande est momentanément indisponible.',
           response.status,
         );
@@ -210,6 +215,7 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
   }
 
   return {
+    shippingOptions: () => request('/payments/shipping', { method: 'GET' }, isShippingOptions),
     checkout: (
       customer: CustomerDetails,
       productId: number,
@@ -226,6 +232,8 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
             customerEmail: customer.customerEmail.trim().toLowerCase(),
             items: [{ productId, quantity }],
             checkoutKey,
+            shippingAddress: customer.shippingAddress,
+            expectedShippingFee: customer.expectedShippingFee,
           }),
         },
         isCheckout,

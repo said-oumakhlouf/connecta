@@ -191,6 +191,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
           customerEmail: customer.customerEmail.trim().toLowerCase(),
           productId: product.id,
           quantity: cartCount,
+          shippingAddress: customer.shippingAddress,
+          expectedShippingFee: customer.expectedShippingFee,
         },
         sessionStorage,
       );

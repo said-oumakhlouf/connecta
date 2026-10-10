@@ -1,3 +1,4 @@
+import { isShippingOrder } from './shipping';
 import { API_BASE_URL } from './api-config';
 import type { AdminOrder } from './admin-api';
 import type { CheckoutSession } from './shop-api';
@@ -39,6 +40,7 @@ const orders = (value: unknown): value is MemberOrders =>
       typeof order.id === 'string' &&
       typeof order.customerName === 'string' &&
       amount(order.total) &&
+      isShippingOrder(order) &&
       date(order.createdAt) &&
       ['PENDING', 'CONFIRMED', 'CANCELLED'].includes(String(order.status)) &&
       ['LEGACY', 'UNPAID', 'PAID', 'EXPIRED'].includes(

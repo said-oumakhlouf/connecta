@@ -1,5 +1,6 @@
 'use client';
 
+import type { FulfillmentUpdate } from '@/lib/shipping';
 import {
   ArrowLeft,
   ArrowRight,
@@ -272,6 +273,28 @@ export default function AdminPanel() {
     }
   }
 
+  async function updateFulfillment(orderId: string, update: FulfillmentUpdate): Promise<boolean> {
+    if (!session || submitting.current || loading) return false;
+    submitting.current = true;
+    requestSequence.current++;
+    setPendingOrderId(orderId);
+    setError(''); setSuccess('');
+    const token = session.token;
+    try {
+      const updated = await adminApi.updateFulfillment(token, orderId, update);
+      if (token !== activeToken.current) return false;
+      setOrders(current => current ? { ...current, orders: current.orders.map(order => order.id === updated.id ? updated : order) } : null);
+      setSuccess('Suivi de livraison mis à jour dans l’espace du client.');
+      return true;
+    } catch (problem) {
+      if (token === activeToken.current) reportError(problem);
+      return false;
+    } finally {
+      submitting.current = false;
+      setPendingOrderId(null);
+    }
+  }
+
   if (!session)
     return (
       <main className={styles.loginPage}>
@@ -449,6 +472,7 @@ export default function AdminPanel() {
             loading={blocked}
             pendingOrderId={pendingOrderId}
             onStatus={updateOrderStatus}
+            onFulfillment={updateFulfillment}
             onPage={(page) => void load(session.token, page)}
           />
         ) : (

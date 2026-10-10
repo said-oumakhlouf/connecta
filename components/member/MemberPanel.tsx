@@ -1,5 +1,7 @@
 'use client';
 
+import DeliveryDetails from '@/components/orders/DeliveryDetails';
+import { fulfillmentLabels, shortReference } from '@/lib/shipping';
 import {
   useCallback,
   useEffect,
@@ -350,10 +352,7 @@ export default function MemberPanel() {
                         </h2>
                         <p className="mt-1 text-xs text-[#72767f]">
                           Réservation n°{' '}
-                          {order.id
-                            .replaceAll('-', '')
-                            .slice(0, 12)
-                            .toUpperCase()}
+                          {shortReference(order.id)}
                         </p>
                       </div>
                       <strong className="whitespace-nowrap text-lg">
@@ -362,7 +361,7 @@ export default function MemberPanel() {
                     </div>
                     <p className="my-3 text-sm font-medium">
                       {order.paymentStatus === 'PAID'
-                        ? 'Payée'
+                        ? fulfillmentLabels[order.fulfillmentStatus ?? 'UNFULFILLED']
                         : order.paymentStatus === 'EXPIRED'
                           ? 'Réservation terminée'
                           : order.status === 'CANCELLED'
@@ -371,7 +370,10 @@ export default function MemberPanel() {
                               ? 'Confirmée'
                               : 'En attente'}
                     </p>
-                    <ReservationStatus order={order} now={now} customer />
+                    {order.paymentStatus !== 'PAID' && <ReservationStatus order={order} now={now} customer />}
+                    {order.trackingCarrier && order.trackingNumber && <p className="mt-2 break-words text-sm">{order.trackingCarrier} · Suivi n° <strong>{order.trackingNumber}</strong></p>}
+                    {order.shippedAt && <p className="mt-1 text-xs text-[#72767f]">Expédiée le {dateFormat.format(new Date(order.shippedAt))}</p>}
+                    {order.deliveredAt && <p className="mt-1 text-xs text-[#72767f]">Livrée le {dateFormat.format(new Date(order.deliveredAt))}</p>}
                     <details className="mt-5 border-t border-[#eff0f3] pt-4 text-sm">
                       <summary className="cursor-pointer font-medium">
                         Détail de ma commande
@@ -387,6 +389,7 @@ export default function MemberPanel() {
                           <strong>{formatPrice(item.lineTotal)}</strong>
                         </div>
                       ))}
+                      <DeliveryDetails order={order} />
                     </details>
                     {order.paymentStatus === 'UNPAID' && (
                       <div className="mt-5 border-t border-[#eff0f3] pt-4">

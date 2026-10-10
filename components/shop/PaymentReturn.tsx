@@ -9,6 +9,7 @@ import {
   type CheckoutSession,
 } from "@/lib/shop-api";
 import { formatPrice } from "@/lib/shop-pricing";
+import { shortReference } from "@/lib/shipping";
 import BrandName from "@/components/layout/BrandName";
 
 export default function PaymentReturn() {
@@ -136,8 +137,12 @@ export default function PaymentReturn() {
           <dl className="mt-7 space-y-4 rounded-2xl bg-[#f7f8fa] p-5 text-left text-sm">
             <div>
               <dt className="text-[#72767f]">Commande</dt>
-              <dd className="mt-1 break-all font-medium">{data.orderId}</dd>
+              <dd className="mt-1 break-all font-medium">{shortReference(data.orderId)}</dd>
             </div>
+            {data.shippingFee !== undefined && <>
+              <div className="flex justify-between"><dt>Articles</dt><dd>{formatPrice(data.total - data.shippingFee)}</dd></div>
+              <div className="flex justify-between"><dt>Livraison</dt><dd>{formatPrice(data.shippingFee)}</dd></div>
+            </>}
             <div className="flex justify-between">
               <dt>Total</dt>
               <dd className="font-semibold">{formatPrice(data.total)}</dd>
