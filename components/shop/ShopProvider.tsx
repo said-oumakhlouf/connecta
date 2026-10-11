@@ -37,12 +37,13 @@ type ShopContextValue = {
   isSubmitting: boolean;
   hasCheckoutAttempt: boolean;
   dialogRef: RefObject<HTMLDialogElement | null>;
+  cartOpenVersion: number;
   selectOffer: (id: OfferId) => void;
   order: (id?: OfferId) => void;
   openCart: () => void;
   closeCart: () => void;
   refreshProduct: () => Promise<void>;
-  submitOrder: (customer: CustomerDetails) => Promise<void>;
+  submitOrder: (customer: CustomerDetails, memberCheckout: boolean) => Promise<void>;
   updateCartQuantity: (change: number) => void;
 };
 
@@ -57,6 +58,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasCheckoutAttempt, setHasCheckoutAttempt] = useState(false);
+  const [cartOpenVersion, setCartOpenVersion] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const submissionRef = useRef(false);
   const loadSequence = useRef(0);
@@ -132,7 +134,10 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }
 
   function openDialog() {
-    if (!dialogRef.current?.open) dialogRef.current?.showModal();
+    if (!dialogRef.current?.open) {
+      dialogRef.current?.showModal();
+      setCartOpenVersion(value => value + 1);
+    }
   }
 
   function order(id: OfferId = selectedOffer) {
@@ -159,7 +164,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     setOrderError(null);
   }
 
-  async function submitOrder(customer: CustomerDetails) {
+  async function submitOrder(customer: CustomerDetails, memberCheckout: boolean) {
     if (
       submissionRef.current ||
       !cart ||
@@ -202,6 +207,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         product.id,
         cartCount,
         key,
+        memberCheckout,
       );
       sessionStorage.setItem('connectaCheckoutSession', JSON.stringify(result));
       window.location.assign(result.url);
@@ -260,6 +266,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         isSubmitting,
         hasCheckoutAttempt,
         dialogRef,
+        cartOpenVersion,
         selectOffer,
         order,
         openCart,
