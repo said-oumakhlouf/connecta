@@ -287,7 +287,7 @@ export default function CartDialog() {
               )}
               {member && accountState === 'ready' && (
                 <p className="text-xs text-[#235bfa]">
-                  Connecté à CONNECTA : vos coordonnées ont été récupérées depuis votre dernière commande payée.
+                  {member.customerName ? 'Connecté à CONNECTA : vos coordonnées ont été récupérées depuis votre dernière commande payée.' : 'Connecté à CONNECTA : votre adresse email est déjà renseignée.'}
                 </p>
               )}
               <div>
