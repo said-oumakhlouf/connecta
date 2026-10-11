@@ -39,6 +39,17 @@ test('checkout sends server-priced quantities and a stable retry key', async () 
   );
 });
 
+test('signed-in checkout uses the member endpoint and sends the verified session cookie', async () => {
+  const api = createShopApi('http://api.test', async (url, options) => {
+    assert.equal(url, 'http://api.test/members/checkout');
+    assert.equal(options?.credentials, 'include');
+    assert.equal(options?.method, 'POST');
+    assert.equal(JSON.parse(String(options?.body)).customerEmail, 'customer@example.com');
+    return json(checkout);
+  });
+  await api.checkout({ customerName: 'Customer', customerEmail: 'CUSTOMER@example.com' }, 1, 1, 'key', true);
+});
+
 test('checkout refuses a forged redirect, a live checkout and an invalid expiry', async () => {
   for (const data of [
     { ...checkout, url: 'https://evil.test' },

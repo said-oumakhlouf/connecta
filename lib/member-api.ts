@@ -1,9 +1,14 @@
-import { isShippingOrder } from './shipping';
+import { isShippingOrder, type ShippingAddress } from './shipping';
 import { API_BASE_URL } from './api-config';
 import type { AdminOrder } from './admin-api';
 import type { CheckoutSession } from './shop-api';
 
-export type MemberProfile = { email: string; expiresAt: string };
+export type MemberProfile = {
+  email: string;
+  expiresAt: string;
+  customerName?: string | null;
+  shippingAddress?: ShippingAddress | null;
+};
 export type MemberOrder = Omit<AdminOrder, 'customerEmail'>;
 export type MemberOrders = {
   orders: MemberOrder[];
@@ -26,7 +31,13 @@ const amount = (value: unknown): value is number =>
 const date = (value: unknown): value is string =>
   typeof value === 'string' && Number.isFinite(Date.parse(value));
 const profile = (value: unknown): value is MemberProfile =>
-  record(value) && typeof value.email === 'string' && date(value.expiresAt);
+  record(value) &&
+  typeof value.email === 'string' &&
+  date(value.expiresAt) &&
+  (value.customerName === undefined || value.customerName === null ||
+    (typeof value.customerName === 'string' && value.customerName.length <= 120)) &&
+  (value.shippingAddress === undefined || value.shippingAddress === null ||
+    isShippingOrder({ shippingAddress: value.shippingAddress }));
 const orders = (value: unknown): value is MemberOrders =>
   record(value) &&
   amount(value.total) &&

@@ -17,6 +17,21 @@ test('member requests send cookies, disable caching and never store or return a 
   assert.deepEqual(await api.verify('a'.repeat(64)), profile);
 });
 
+test('member profile validates remembered name and address and rejects malformed details', async () => {
+  const details = {
+    email: 'customer@example.com',
+    expiresAt: '2026-10-10T12:00:00Z',
+    customerName: 'Customer Test',
+    shippingAddress: { country: 'FR', line1: '12 rue du Test', line2: '', city: 'Paris', postalCode: '75001', region: '' },
+  };
+  const api = createMemberApi('http://api.test', async () => json(details));
+  assert.deepEqual(await api.me(), details);
+  const invalid = createMemberApi('http://api.test', async () => json({
+    ...details, shippingAddress: { ...details.shippingAddress, country: 'XX' },
+  }));
+  await assert.rejects(invalid.me(), /incomplète/);
+});
+
 test('a member may only resume a verified Stripe test checkout URL', async () => {
   const session = { sessionId: 'cs_test_123', url: 'https://checkout.stripe.com/c/pay/fixture', expiresAt: '2026-10-09T18:00:00Z', total: 6000, testMode: true };
   for (const value of [session, { ...session, url: 'https://evil.test' }, { ...session, testMode: false }]) {

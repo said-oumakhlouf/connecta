@@ -150,6 +150,8 @@ function isOrder(value: unknown): value is ApiOrder {
 
 const errorMessages: Record<number, string> = {
   400: 'Vérifiez votre nom, votre email et les quantités demandées.',
+  401: 'Votre session a expiré. Reconnectez-vous à votre espace membre.',
+  403: 'Adresse email différente du compte connecté. Reconnectez-vous ou changez de compte.',
   404: 'Ce produit n’est plus disponible.',
   409: 'Le stock ou le tarif a changé. Vérifiez le panier avant de valider à nouveau.',
   429: 'Trop de réservations. Patientez avant de recommencer.',
@@ -221,11 +223,13 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
       productId: number,
       quantity: number,
       checkoutKey: string,
+      memberCheckout = false,
     ) =>
       request(
-        '/payments/checkout',
+        memberCheckout ? '/members/checkout' : '/payments/checkout',
         {
           method: 'POST',
+          ...(memberCheckout ? { credentials: 'include' as const } : {}),
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             customerName: customer.customerName.trim(),

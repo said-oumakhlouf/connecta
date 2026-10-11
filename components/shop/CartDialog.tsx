@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
 import ShippingFields from './ShippingFields';
 import { shopApi } from '@/lib/shop-api';
+import { memberApi, MemberApiError, type MemberProfile } from '@/lib/member-api';
 import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
@@ -26,6 +27,7 @@ export default function CartDialog() {
     orderError,
     isSubmitting,
     hasCheckoutAttempt,
+    cartOpenVersion,
     closeCart,
     submitOrder,
     refreshProduct,
@@ -33,6 +35,10 @@ export default function CartDialog() {
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [member, setMember] = useState<MemberProfile | null>(null);
+  const [accountState, setAccountState] = useState<'checking' | 'ready' | 'error'>('checking');
+  const [accountRetry, setAccountRetry] = useState(0);
+  const lastMemberEmail = useRef<string | null>(null);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({ country: 'FR', line1: '', line2: '', city: '', postalCode: '', region: '' });
   const [shippingOptions, setShippingOptions] = useState<ShippingOptions | null>(null);
   const [shippingError, setShippingError] = useState('');
@@ -49,6 +55,41 @@ export default function CartDialog() {
     }).catch(() => { if (active) setShippingError('Impossible de charger les frais de livraison.'); });
     return () => { active = false; };
   }, [shippingRefresh]);
+  useEffect(() => {
+    if (cartOpenVersion === 0) return;
+    let active = true;
+    setAccountState('checking');
+    void memberApi.me().then(profile => {
+      if (!active) return;
+      lastMemberEmail.current = profile.email;
+      setMember(profile);
+      setCustomerEmail(profile.email);
+      setCustomerName(profile.customerName ?? '');
+      setShippingAddress(profile.shippingAddress ?? {
+        country: 'FR', line1: '', line2: '', city: '', postalCode: '', region: '',
+      });
+      setAccountState('ready');
+    }).catch(error => {
+      if (!active) return;
+      if (error instanceof MemberApiError && error.status === 401) {
+        // Clear old member details after logout or session expiry, not guest form entries.
+        if (lastMemberEmail.current) {
+          setCustomerEmail('');
+          setCustomerName('');
+          setShippingAddress({
+            country: 'FR', line1: '', line2: '', city: '', postalCode: '', region: '',
+          });
+        }
+        lastMemberEmail.current = null;
+        setMember(null);
+        setAccountState('ready');
+      } else {
+        setAccountState('error');
+      }
+    });
+    return () => { active = false; };
+  }, [cartOpenVersion, accountRetry]);
+
   const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
   const unavailable = product && (!product.active || product.stock === 0);
   const insufficientStock = product && cartCount > product.stock;
@@ -59,12 +100,14 @@ export default function CartDialog() {
     !productLoading &&
     !productError &&
     (hasCheckoutAttempt || (!unavailable && !insufficientStock)) &&
-    !isSubmitting;
+    !isSubmitting &&
+    accountState === 'ready';
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (shippingFee === undefined) return;
-    void submitOrder({ customerName, customerEmail, shippingAddress, expectedShippingFee: shippingFee });
+    if (accountState !== 'ready') return;
+    void submitOrder({ customerName, customerEmail, shippingAddress, expectedShippingFee: shippingFee }, !!member);
   }
 
   return (
@@ -231,6 +274,22 @@ export default function CartDialog() {
               <legend className="mb-4 text-sm font-semibold">
                 Vos coordonnées
               </legend>
+              {accountState === 'checking' && (
+                <p role="status" className="text-xs text-[#72767f]">Vérification de votre compte…</p>
+              )}
+              {accountState === 'error' && (
+                <div role="alert" className="rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
+                  Impossible de vérifier votre session. Réessayez avant de payer.
+                  <button type="button" className="ml-2 font-semibold underline" onClick={() => setAccountRetry(value => value + 1)}>
+                    Réessayer
+                  </button>
+                </div>
+              )}
+              {member && accountState === 'ready' && (
+                <p className="text-xs text-[#235bfa]">
+                  {member.customerName ? 'Connecté à CONNECTA : vos coordonnées ont été récupérées depuis votre dernière commande payée.' : 'Connecté à CONNECTA : votre adresse email est déjà renseignée.'}
+                </p>
+              )}
               <div>
                 <label
                   htmlFor="customer-name"
@@ -266,10 +325,17 @@ export default function CartDialog() {
                   required
                   maxLength={254}
                   value={customerEmail}
+                  readOnly={!!member}
                   onChange={(event) => setCustomerEmail(event.target.value)}
                   className="w-full rounded-xl border border-[#e0e3e8] bg-white px-4 py-3 text-base outline-none focus:border-[#235bfa] focus:ring-2 focus:ring-[#235bfa20]"
                 />
               </div>
+              {member && (
+                <p className="text-xs text-[#72767f]">
+                  Adresse email liée à votre compte. Pour acheter avec une autre adresse,{' '}
+                  <a href="/compte" className="font-medium underline">changez de compte</a>.
+                </p>
+              )}
             </fieldset>
 
             <ShippingFields address={shippingAddress} options={shippingOptions} onChange={setShippingAddress} disabled={isSubmitting || !shippingOptions} />
