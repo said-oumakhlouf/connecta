@@ -56,6 +56,10 @@ export default function PaymentReturn() {
       if (result.paymentStatus !== "UNPAID") {
         sessionStorage.removeItem("connectaCheckoutAttempt");
         sessionStorage.removeItem("connectaCheckoutSession");
+        if (result.paymentStatus === "PAID") {
+          // A confirmed order is no longer an editable shopping draft.
+          sessionStorage.removeItem("connectaCartDraft");
+        }
       }
     } catch (problem) {
       if (sequence !== requestSequence.current) return;
@@ -210,7 +214,7 @@ export default function PaymentReturn() {
           </p>
         )}
         <a
-          href="/"
+          href="/boutique"
           className="mt-7 inline-block text-sm font-semibold text-[#235bfa]"
         >
           Retour à la boutique →
