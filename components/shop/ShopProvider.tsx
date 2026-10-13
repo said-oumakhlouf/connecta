@@ -20,6 +20,7 @@ import {
 import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
 import { parseCartDraft } from '@/lib/cart-draft';
+import { clearFinalizedCheckout } from '@/lib/checkout-storage';
 import { MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
@@ -165,13 +166,10 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     let active = true;
     void shopApi.checkoutStatus(sessionId).then(result => {
       if (!active || result.paymentStatus === 'UNPAID') return;
-      sessionStorage.removeItem('connectaCheckoutAttempt');
-      sessionStorage.removeItem('connectaCheckoutSession');
+      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus)) return;
       setHasCheckoutAttempt(false);
-      if (result.paymentStatus === 'PAID') {
-        setCartItems([]);
-        sessionStorage.removeItem('connectaCartDraft');
-      }
+      setCartItems([]);
+      setCartNotice('');
       void refreshProduct();
     }).catch(() => {
       /* Never discard an unknown payment reservation on a network error. */
@@ -317,16 +315,15 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       const result = await shopApi.cancelCheckout(sessionId);
       if (result.paymentStatus === 'UNPAID')
         throw new Error('La réservation reste active. Réessayez ou vérifiez le paiement.');
-      sessionStorage.removeItem('connectaCheckoutAttempt');
-      sessionStorage.removeItem('connectaCheckoutSession');
+      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus))
+        throw new Error('La réservation reste active. Vérifiez son statut.');
       setHasCheckoutAttempt(false);
-      if (result.paymentStatus === 'PAID') {
-        setCartItems([]);
-        sessionStorage.removeItem('connectaCartDraft');
-        setCartNotice('Le paiement a déjà été confirmé. Consultez vos commandes.');
-      } else {
-        setCartNotice('Réservation annulée : vous pouvez modifier votre panier.');
-      }
+      setCartItems([]);
+      setRequestedOffer(null);
+      setOrderError(null);
+      setCartNotice(result.paymentStatus === 'PAID'
+        ? 'Le paiement est confirmé. Le panier a été vidé.'
+        : 'Commande annulée. Votre panier est maintenant vide.');
       await refreshProduct();
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : 'Impossible d’annuler la réservation.');
