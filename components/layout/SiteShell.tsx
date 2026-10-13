@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import CartDialog from '@/components/shop/CartDialog';
+import CartNotice from '@/components/shop/CartNotice';
 import Footer from '@/components/layout/Footer';
 import Header from '@/components/layout/Header';
 import MobileOrder from '@/components/shop/MobileOrder';
@@ -23,6 +24,7 @@ export default function SiteShell({ children }: { children: ReactNode }) {
       <Footer />
       <MobileOrder />
       <CartDialog />
+      <CartNotice />
     </ShopProvider>
   );
 }
