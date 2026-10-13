@@ -36,7 +36,7 @@ export async function checkoutAttempt(
       items: Array.isArray(basket.items) && basket.items.length <= 10 && basket.items.every(
         item => item && Number.isInteger(item.productId) && item.productId > 0 &&
           Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= 10,
-      ) ? basket.items : undefined,
+      ) ? basket.items.map(item => ({ productId: item.productId, quantity: item.quantity })) : undefined,
     }),
   );
   return key;
