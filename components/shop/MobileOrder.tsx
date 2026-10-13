@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/shop-pricing';
 
 export default function MobileOrder() {
   const pathname = usePathname();
+  if (pathname === '/boutique') return null;
   return isProductPagePath(pathname) ? <ProductMobileOrder /> : <DefaultMobileOrder />;
 }
 
