@@ -369,7 +369,12 @@ export default function CartDialog() {
             </button>
           </form>
         ) : (
-          <p className="mt-6 text-sm text-[#72767f]">Votre panier est vide. <a href="/boutique" className="text-[#235bfa] underline">Découvrir la boutique</a></p>
+          <div className="mt-6 space-y-3 text-sm text-[#72767f]">
+            {(orderError || catalogError) && (
+              <p role="alert" className="rounded-xl bg-[#fff1f0] p-3 text-[#ae302a]">{orderError ?? catalogError}</p>
+            )}
+            <p>Votre panier est vide. <a href="/boutique" className="text-[#235bfa] underline">Découvrir la boutique</a></p>
+          </div>
         )}
       </div>
     </dialog>
