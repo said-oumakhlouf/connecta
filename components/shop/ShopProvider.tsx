@@ -183,6 +183,13 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       openDialog();
       return;
     }
+    const desired = offers[id].quantity;
+    const oldHoco = cartItems.find(item => item.productId === product?.id)?.quantity ?? 0;
+    if (product && (product.stock < desired || cartCount - oldHoco + desired > MAX_ORDER_UNITS)) {
+      setOrderError('Stock insuffisant ou limite de 10 articles atteinte.');
+      openDialog();
+      return;
+    }
     setSelectedOffer(id);
     setOrderError(null);
     openDialog();
@@ -199,6 +206,12 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     const item = catalog.find(value => value.id === productId);
     if (!item || !item.active || item.stock < 1) {
       setOrderError('Ce produit est actuellement indisponible.');
+      openDialog();
+      return;
+    }
+    if (cartCount >= MAX_ORDER_UNITS ||
+        (cartItems.find(line => line.productId === productId)?.quantity ?? 0) >= item.stock) {
+      setOrderError('Stock insuffisant ou limite de 10 articles atteinte.');
       openDialog();
       return;
     }
