@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { checkoutAttempt } from '../lib/checkout-attempt';
-import { changeCartLine, countUnits, getMultiCartPrice } from '../lib/multi-cart';
+import { changeCartLine, countUnits, getMultiCartPrice, getCartStockAvailability } from '../lib/multi-cart';
 import { parseCartDraft } from '../lib/cart-draft';
 import { clearFinalizedCheckout } from '../lib/checkout-storage';
 import { createShopApi } from '../lib/shop-api';
@@ -131,4 +131,25 @@ test('an unfinished Stripe payment cannot be silently discarded', () => {
   assert.equal(clearFinalizedCheckout(storage, 'UNPAID'), false);
   assert.equal(store.size, 3);
   assert.equal(countUnits(parseCartDraft(store.get('connectaCartDraft') ?? null)), 1);
+});
+
+test('catalogue shows basket-adjusted availability without reserving database stock', () => {
+  const charger = products[2];
+  assert.deepEqual(getCartStockAvailability(charger, []), { inCart: 0, outsideCart: 15, canAdd: true });
+  const selection = [{ productId: charger.id, quantity: 2 }];
+  assert.deepEqual(getCartStockAvailability(charger, selection), { inCart: 2, outsideCart: 13, canAdd: true });
+  assert.equal(charger.stock, 15); // A basket addition never writes to PostgreSQL.
+  assert.deepEqual(getCartStockAvailability(charger, [], false), { inCart: 0, outsideCart: 15, canAdd: true });
+  assert.deepEqual(getCartStockAvailability(charger, selection, true), { inCart: 2, outsideCart: 15, canAdd: false }); // API stock already accounts for reservations.
+});
+
+test('catalogue stops adds at product stock and overall 10-unit order cap', () => {
+  const charger = { ...products[2], stock: 2 };
+  assert.deepEqual(getCartStockAvailability(charger, [{ productId: charger.id, quantity: 2 }]), {
+    inCart: 2, outsideCart: 0, canAdd: false,
+  });
+  assert.deepEqual(getCartStockAvailability(products[1], [
+    { productId: 1, quantity: 8 }, { productId: 2, quantity: 2 },
+  ]), { inCart: 2, outsideCart: 18, canAdd: false });
+  assert.equal(getCartStockAvailability({ ...charger, active: false }, []).canAdd, false);
 });
