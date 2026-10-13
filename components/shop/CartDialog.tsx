@@ -220,9 +220,15 @@ export default function CartDialog() {
               </div>
             )}
             {hasCheckoutAttempt && (
-              <p className="mt-3 text-xs text-[#72767f]">
-                Réservation en cours : le panier est verrouillé pour permettre une reprise sûre du paiement.
-              </p>
+              <div className="mt-3 space-y-2 rounded-xl border border-[#f1d2aa] bg-[#fff8ee] p-4 text-xs leading-5 text-[#835424]">
+                <p>Une réservation Stripe est déjà en cours. Vous pouvez l’annuler avant d’ajouter ou de retirer d’autres articles.</p>
+                <button type="button" disabled={isCancellingCheckout || isSubmitting}
+                  onClick={() => void cancelCurrentCheckout()}
+                  className="block font-semibold underline disabled:opacity-40">
+                  {isCancellingCheckout ? 'Annulation en cours…' : 'Annuler la réservation et modifier mon panier'}
+                </button>
+                <a href="/paiement?retour=1" className="block underline">Vérifier ou reprendre le paiement</a>
+              </div>
             )}
 
             <div className="mt-4 space-y-3 border-b border-[#e9eaed] pb-5 text-sm">
