@@ -10,6 +10,10 @@ import { useShop } from '@/components/shop/ShopProvider';
 
 const NAVIGATION = [
   {
+    label: 'La boutique',
+    href: '/boutique',
+  },
+  {
     label: 'Le produit',
     href: '/#produit',
   },
