@@ -36,6 +36,15 @@ export default function CatalogPage() {
         {!catalogLoading && !catalogError && catalog.length === 0 && (
           <p className="rounded-xl bg-white p-6 text-sm">Aucun produit disponible pour le moment.</p>
         )}
+        {hasCheckoutAttempt && (
+          <div role="status" className="mb-6 rounded-2xl border border-[#f1d2aa] bg-[#fff8ee] p-5 text-sm text-[#835424]">
+            Vous avez une réservation Stripe en cours. Pour ajouter d'autres produits,
+            ouvrez le panier et annulez cette réservation, sans perdre votre sélection.
+            <button type="button" onClick={openCart} className="ml-2 font-semibold underline">
+              Gérer la réservation
+            </button>
+          </div>
+        )}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {catalog.map(item => {
             const isHoco = item.slug === 'hoco-ew75';
@@ -61,7 +70,7 @@ export default function CatalogPage() {
                   <p className="mt-2 text-xs text-[#72767f]">{soldOut ? 'Épuisé' : `${item.stock} disponible(s)`}</p>
                   <div className="mt-auto flex items-end justify-between gap-3 pt-7">
                     <strong className="text-2xl tracking-[-0.8px]">{formatPrice(item.price)}</strong>
-                    <button type="button" disabled={soldOut || isSubmitting || hasCheckoutAttempt}
+                    <button type="button" disabled={soldOut || isSubmitting || hasCheckoutAttempt || cartCount >= 10}
                       onClick={() => addProduct(item.id)}
                       className="inline-flex items-center gap-2 rounded-full bg-[#235bfa] px-5 py-3 text-xs font-semibold text-white transition hover:bg-[#1748cb] disabled:cursor-not-allowed disabled:bg-[#b5bdca]">
                       Ajouter <ArrowRight size={14} />
