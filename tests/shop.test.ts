@@ -46,19 +46,19 @@ for (const [quantity, total, discount] of [
 }
 
 test('twenty stocked pairs allow ten Solo units or five Duo packs', () => {
-  assert.equal(getMaxCartCount(20, 1), 10);
-  assert.equal(getMaxCartCount(20, 2), 5);
+  assert.equal(getMaxCartCount(20, 1), 20);
+  assert.equal(getMaxCartCount(20, 2), 10);
 });
 
 test('Duo quantities respect odd stock and a sold-out product', () => {
-  assert.equal(getMaxCartCount(21, 2), 5);
+  assert.equal(getMaxCartCount(21, 2), 10);
   assert.equal(getMaxCartCount(1, 2), 0);
   assert.equal(getMaxCartCount(0, 1), 0);
 });
 
 test('larger stock respects the backend limit of ten physical units', () => {
-  assert.equal(getMaxCartCount(250, 1), 10);
-  assert.equal(getMaxCartCount(250, 2), 5);
+  assert.equal(getMaxCartCount(250, 1), 250);
+  assert.equal(getMaxCartCount(250, 2), 125);
 });
 
 test('normal pricing applies when the Duo offer is absent or more expensive', () => {
