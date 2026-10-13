@@ -1,3 +1,5 @@
+import { MAX_CART_REFERENCES } from './shop-pricing';
+
 // Store only a hashed basket fingerprint and an opaque retry key, never customer details.
 export async function checkoutAttempt(
   payload: unknown,
@@ -33,9 +35,9 @@ export async function checkoutAttempt(
       fingerprint,
       quantity: basket.quantity,
       productId: basket.productId,
-      items: Array.isArray(basket.items) && basket.items.length <= 10 && basket.items.every(
+      items: Array.isArray(basket.items) && basket.items.length <= MAX_CART_REFERENCES && basket.items.every(
         item => item && Number.isInteger(item.productId) && item.productId > 0 &&
-          Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= 10,
+          Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= 2_147_483_647,
       ) ? basket.items.map(item => ({ productId: item.productId, quantity: item.quantity })) : undefined,
     }),
   );
