@@ -262,13 +262,25 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     try {
       const items = cartItems.map(item => ({ productId: item.productId, quantity: item.quantity }))
         .sort((a, b) => a.productId - b.productId);
-      const key = await checkoutAttempt({
+      // Old Solo/Duo reservations stored productId/quantity instead of items.
+      // Preserve their fingerprint so an in-progress Stripe session can be resumed.
+      let legacy: { productId?: number; quantity?: number; items?: CartLine[] } | null = null;
+      try {
+        legacy = JSON.parse(sessionStorage.getItem('connectaCheckoutAttempt') ?? 'null');
+      } catch { /* No usable legacy attempt. */ }
+      const common = {
         customerName: customer.customerName.trim(),
         customerEmail: customer.customerEmail.trim().toLowerCase(),
-        items,
-        shippingAddress: customer.shippingAddress,
-        expectedShippingFee: customer.expectedShippingFee,
-      }, sessionStorage);
+      };
+      const legacyPayload = legacy && !Array.isArray(legacy.items) &&
+        items.length === 1 &&
+        legacy.productId === items[0].productId && legacy.quantity === items[0].quantity;
+      const attemptPayload = legacyPayload
+        ? { ...common, productId: items[0].productId, quantity: items[0].quantity,
+            shippingAddress: customer.shippingAddress, expectedShippingFee: customer.expectedShippingFee }
+        : { ...common, items,
+            shippingAddress: customer.shippingAddress, expectedShippingFee: customer.expectedShippingFee };
+      const key = await checkoutAttempt(attemptPayload, sessionStorage);
       setHasCheckoutAttempt(true);
       const result = await shopApi.checkoutItems(customer, items, key, memberCheckout);
       sessionStorage.setItem('connectaCheckoutSession', JSON.stringify(result));
