@@ -57,7 +57,7 @@ export default function Hero() {
               onClick={() => order('solo')}
               className="group flex min-w-46 items-center justify-between gap-6 rounded-full bg-[#17191d] px-5 py-3.5 text-[11px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#235bfa] sm:min-w-52.5 sm:px-6 sm:py-4 md:min-w-55 md:gap-8 md:py-4.5 md:text-xs"
             >
-              Commander
+              Ajouter au panier
               <ArrowRight
                 size={15}
                 className="transition-transform duration-300 group-hover:translate-x-1"
