@@ -18,6 +18,7 @@ import {
   type CustomerDetails,
 } from '@/lib/shop-api';
 import { checkoutAttempt } from '@/lib/checkout-attempt';
+import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
 import { getCartPrice, getMaxCartCount, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
@@ -25,6 +26,13 @@ type ShopContextValue = {
   offers: Record<OfferId, Offer>;
   offer: Offer;
   cart: Cart | null;
+  cartItems: CartLine[];
+  catalog: ApiProduct[];
+  catalogLoading: boolean;
+  catalogError: string | null;
+  addProduct: (productId: number) => void;
+  updateProductQuantity: (productId: number, change: number) => void;
+  removeProduct: (productId: number) => void;
   cartOffer: Offer | null;
   cartCount: number;
   cartTotal: number;
@@ -51,7 +59,11 @@ const ShopContext = createContext<ShopContextValue | null>(null);
 
 export default function ShopProvider({ children }: { children: ReactNode }) {
   const [selectedOffer, setSelectedOffer] = useState<OfferId>('solo');
-  const [cart, setCart] = useState<Cart | null>(null);
+  const [cartItems, setCartItems] = useState<CartLine[]>([]);
+  const [catalog, setCatalog] = useState<ApiProduct[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [requestedOffer, setRequestedOffer] = useState<OfferId | null>(null);
   const [product, setProduct] = useState<ApiProduct | null>(null);
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState<string | null>(null);
@@ -66,45 +78,53 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   const refreshProduct = useCallback(async () => {
     const sequence = ++loadSequence.current;
     setProductLoading(true);
+    setCatalogLoading(true);
     setProductError(null);
+    setCatalogError(null);
     try {
-      const result = await shopApi.getProduct();
-      if (sequence === loadSequence.current) setProduct(result);
+      const products = await shopApi.getProducts();
+      if (sequence !== loadSequence.current) return;
+      setCatalog(products);
+      const hoco = products.find((item) => item.slug === 'hoco-ew75') ?? null;
+      setProduct(hoco);
+      if (!hoco) setProductError('Les écouteurs Hoco EW75 sont indisponibles.');
     } catch (error) {
-      if (sequence === loadSequence.current) {
-        setProduct(null);
-        setProductError(
-          error instanceof Error
-            ? error.message
-            : 'Produit momentanément indisponible.',
-        );
-      }
+      if (sequence !== loadSequence.current) return;
+      const message = error instanceof Error ? error.message : 'Catalogue momentanément indisponible.';
+      setCatalog([]);
+      setProduct(null);
+      setProductError(message);
+      setCatalogError(message);
     } finally {
-      if (sequence === loadSequence.current) setProductLoading(false);
+      if (sequence === loadSequence.current) {
+        setProductLoading(false);
+        setCatalogLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     try {
-      const saved = JSON.parse(
-        sessionStorage.getItem('connectaCheckoutAttempt') ?? 'null',
-      ) as { quantity?: number } | null;
-      if (
-        saved &&
-        Number.isInteger(saved.quantity) &&
-        saved.quantity! >= 1 &&
-        saved.quantity! <= MAX_ORDER_UNITS
-      ) {
+      const saved = JSON.parse(sessionStorage.getItem('connectaCheckoutAttempt') ?? 'null') as
+        { items?: CartLine[]; productId?: number; quantity?: number } | null;
+      const candidates = Array.isArray(saved?.items)
+        ? saved.items
+        : saved?.productId && saved?.quantity
+          ? [{ productId: saved.productId, quantity: saved.quantity }]
+          : [];
+      if (candidates.length > 0 && candidates.length <= MAX_ORDER_UNITS &&
+          candidates.every(line => Number.isInteger(line.productId) && line.productId > 0 &&
+            Number.isInteger(line.quantity) && line.quantity > 0) &&
+          new Set(candidates.map(line => line.productId)).size === candidates.length &&
+          countUnits(candidates) <= MAX_ORDER_UNITS) {
         setHasCheckoutAttempt(true);
-        setCart({ id: 'solo', count: saved.quantity! });
+        setCartItems(candidates);
       }
     } catch {
-      /* No previous checkout to resume. */
+      /* Invalid or missing checkout-attempt metadata. */
     }
     void refreshProduct();
-    return () => {
-      loadSequence.current += 1;
-    };
+    return () => { loadSequence.current += 1; };
   }, [refreshProduct]);
 
   const soloPrice = product?.price ?? OFFERS.solo.price * 100;
@@ -117,17 +137,34 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     },
   };
   const offer = offers[selectedOffer];
+  const hocoInCart = cartItems.find(item => item.productId === product?.id);
+  // Compatibility for the existing Solo/Duo offer components.
+  const cart: Cart | null = hocoInCart ? {
+    id: selectedOffer,
+    count: Math.ceil(hocoInCart.quantity / offers[selectedOffer].quantity),
+  } : null;
   const cartOffer = cart ? offers[cart.id] : null;
-  const cartCount = cart && cartOffer ? cart.count * cartOffer.quantity : 0;
-  const { total: cartTotal, discount: cartDiscount } = getCartPrice(
-    soloPrice,
-    duoPrice,
-    cartCount,
-  );
-  const maxCartCount =
-    product?.active && cartOffer
-      ? getMaxCartCount(product.stock, cartOffer.quantity)
-      : 0;
+  const priced = getMultiCartPrice(catalog, cartItems);
+  const cartCount = priced.count;
+  const cartTotal = priced.total;
+  const cartDiscount = priced.discount;
+  const otherUnits = cartCount - (hocoInCart?.quantity ?? 0);
+  const maxCartCount = product?.active
+    ? Math.floor(Math.min(product.stock, MAX_ORDER_UNITS - otherUnits) / offer.quantity)
+    : 0;
+
+  // A click before the initial catalog arrives is fulfilled after loading.
+  useEffect(() => {
+    if (!requestedOffer || !product || hasCheckoutAttempt) return;
+    const quantity = offers[requestedOffer].quantity;
+    setCartItems(current => {
+      const others = current.filter(item => item.productId !== product.id);
+      return countUnits(others) + quantity <= MAX_ORDER_UNITS && product.stock >= quantity
+        ? [...others, { productId: product.id, quantity }].sort((a, b) => a.productId - b.productId)
+        : current;
+    });
+    setRequestedOffer(null);
+  }, [product, requestedOffer, hasCheckoutAttempt]);
 
   function selectOffer(id: OfferId) {
     if (!submissionRef.current) setSelectedOffer(id);
@@ -141,21 +178,52 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }
 
   function order(id: OfferId = selectedOffer) {
-    if (submissionRef.current) return;
+    if (submissionRef.current || hasCheckoutAttempt) {
+      if (hasCheckoutAttempt) setOrderError('Terminez ou annulez votre réservation avant de modifier le panier.');
+      openDialog();
+      return;
+    }
     setSelectedOffer(id);
-    setCart({ id, count: 1 });
     setOrderError(null);
     openDialog();
-    void refreshProduct();
+    setRequestedOffer(id);
+    if (!product) void refreshProduct();
+  }
+
+  function addProduct(productId: number) {
+    if (submissionRef.current || hasCheckoutAttempt) {
+      setOrderError('Terminez ou annulez votre réservation avant de modifier le panier.');
+      openDialog();
+      return;
+    }
+    const item = catalog.find(value => value.id === productId);
+    if (!item || !item.active || item.stock < 1) {
+      setOrderError('Ce produit est actuellement indisponible.');
+      openDialog();
+      return;
+    }
+    setCartItems(current => changeCartLine(current, item, 1));
+    setOrderError(null);
+    openDialog();
+  }
+
+  function updateProductQuantity(productId: number, change: number) {
+    if (submissionRef.current || hasCheckoutAttempt) return;
+    const item = catalog.find(value => value.id === productId);
+    if (!item) return;
+    setCartItems(current => changeCartLine(current, item, change));
+    setOrderError(null);
+  }
+
+  function removeProduct(productId: number) {
+    if (submissionRef.current || hasCheckoutAttempt) return;
+    setCartItems(current => current.filter(line => line.productId !== productId));
+    setOrderError(null);
   }
 
   function openCart() {
-    if (cart) {
-      openDialog();
-      if (!submissionRef.current) void refreshProduct();
-    } else {
-      order();
-    }
+    openDialog();
+    if (!submissionRef.current) void refreshProduct();
   }
 
   function closeCart() {
@@ -165,62 +233,36 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }
 
   async function submitOrder(customer: CustomerDetails, memberCheckout: boolean) {
-    if (
-      submissionRef.current ||
-      !cart ||
-      !product ||
-      productLoading ||
-      productError
-    )
-      return;
-    if (
-      !product.active ||
-      (!hasCheckoutAttempt && cart.count > maxCartCount) ||
-      cartCount < 1 || cartCount > MAX_ORDER_UNITS
-    ) {
-      setOrderError('La quantité demandée dépasse le stock disponible.');
+    if (submissionRef.current || !cartItems.length || catalogLoading || catalogError) return;
+    if ((!hasCheckoutAttempt && !getMultiCartPrice(catalog, cartItems).valid) ||
+        cartCount > MAX_ORDER_UNITS) {
+      setOrderError('Stock insuffisant ou panier modifié. Actualisez le panier.');
       return;
     }
     if (customer.customerName.trim().length < 2) {
       setOrderError('Indiquez un nom comportant au moins deux caractères.');
       return;
     }
-
     submissionRef.current = true;
     setIsSubmitting(true);
     setOrderError(null);
     try {
-      const key = await checkoutAttempt(
-        {
-          customerName: customer.customerName.trim(),
-          customerEmail: customer.customerEmail.trim().toLowerCase(),
-          productId: product.id,
-          quantity: cartCount,
-          shippingAddress: customer.shippingAddress,
-          expectedShippingFee: customer.expectedShippingFee,
-        },
-        sessionStorage,
-      );
+      const items = cartItems.map(item => ({ productId: item.productId, quantity: item.quantity }))
+        .sort((a, b) => a.productId - b.productId);
+      const key = await checkoutAttempt({
+        customerName: customer.customerName.trim(),
+        customerEmail: customer.customerEmail.trim().toLowerCase(),
+        items,
+        shippingAddress: customer.shippingAddress,
+        expectedShippingFee: customer.expectedShippingFee,
+      }, sessionStorage);
       setHasCheckoutAttempt(true);
-      const result = await shopApi.checkout(
-        customer,
-        product.id,
-        cartCount,
-        key,
-        memberCheckout,
-      );
+      const result = await shopApi.checkoutItems(customer, items, key, memberCheckout);
       sessionStorage.setItem('connectaCheckoutSession', JSON.stringify(result));
       window.location.assign(result.url);
     } catch (error) {
-      setOrderError(
-        error instanceof Error
-          ? error.message
-          : 'Impossible de confirmer votre commande.',
-      );
-      if (
-        error instanceof ShopApiError &&
-        (error.status === 409 || error.status === 404)
-      ) {
+      setOrderError(error instanceof Error ? error.message : 'Impossible de confirmer votre commande.');
+      if (error instanceof ShopApiError && (error.status === 409 || error.status === 404)) {
         sessionStorage.removeItem('connectaCheckoutAttempt');
         setHasCheckoutAttempt(false);
         await refreshProduct();
@@ -232,19 +274,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }
 
   function updateCartQuantity(change: number) {
-    if (submissionRef.current) return;
-    setOrderError(null);
-    setCart((current) =>
-      current
-        ? {
-            ...current,
-            count: Math.min(
-              Math.max(1, maxCartCount),
-              Math.max(1, current.count + change),
-            ),
-          }
-        : null,
-    );
+    if (product) updateProductQuantity(product.id, change * offers[selectedOffer].quantity);
   }
 
   return (
@@ -254,6 +284,13 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         offers,
         offer,
         cart,
+        cartItems,
+        catalog,
+        catalogLoading,
+        catalogError,
+        addProduct,
+        updateProductQuantity,
+        removeProduct,
         cartOffer,
         cartCount,
         cartTotal,
