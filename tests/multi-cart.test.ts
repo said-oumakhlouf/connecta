@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { checkoutAttempt } from '../lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice } from '../lib/multi-cart';
+import { parseCartDraft } from '../lib/cart-draft';
 import { createShopApi } from '../lib/shop-api';
 
 const products = [
@@ -72,4 +73,35 @@ test('retry-key storage preserves only product IDs, not customer identity', asyn
   const saved = JSON.parse(storage.getItem('connectaCheckoutAttempt')!);
   assert.deepEqual(saved.items, [{ productId: 1, quantity: 1 }]);
   assert(!JSON.stringify(saved).includes('private@example.test'));
+});
+
+test('shopper can add Hoco and accessories before checkout and keep the basket after navigation', () => {
+  let draft = changeCartLine([], products[1], 1);
+  draft = changeCartLine(draft, products[0], 2);
+  // Page navigation through a normal anchor remounts the provider.
+  const restored = parseCartDraft(JSON.stringify(draft));
+  assert.deepEqual(restored, draft);
+  const continued = changeCartLine(restored, products[2], 1);
+  assert.deepEqual(continued, [
+    { productId: 1, quantity: 2 },
+    { productId: 2, quantity: 1 },
+    { productId: 3, quantity: 1 },
+  ]);
+  assert.deepEqual(getMultiCartPrice(products, continued), {
+    count: 4, total: 8980, discount: 1000, valid: true,
+  });
+  // These are drafts, not Stripe reservations: no key or payment session is needed.
+  assert(!JSON.stringify(continued).includes('checkoutKey'));
+});
+
+test('browser-stored cart rejects duplicates, excessive quantities, and invalid IDs', () => {
+  for (const value of [
+    'invalid json',
+    JSON.stringify([{ productId: 1, quantity: 7 }, { productId: 1, quantity: 1 }]),
+    JSON.stringify([{ productId: 1, quantity: 11 }]),
+    JSON.stringify([{ productId: 1, quantity: 8 }, { productId: 2, quantity: 4 }]),
+    JSON.stringify([{ productId: '1', quantity: 1 }]),
+    JSON.stringify([{ productId: -1, quantity: 1 }]),
+    JSON.stringify([{ productId: 1, quantity: 1.5 }]),
+  ]) assert.deepEqual(parseCartDraft(value), []);
 });
