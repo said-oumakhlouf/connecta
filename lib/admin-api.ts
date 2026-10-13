@@ -13,6 +13,16 @@ export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & ShippingOrder & {
   paidAt?: string | null;
   items: Array<ApiOrder['items'][number] & { productName: string }>;
 };
+export type AdminOrderFilters = {
+  search: string;
+  letter: string;
+  sort: 'date_desc' | 'name_asc' | 'name_desc';
+  filter: 'all' | 'paid' | 'unpaid' | 'preparing' | 'shipped' | 'delivered';
+};
+export const defaultAdminOrderFilters: AdminOrderFilters = {
+  search: '', letter: '', sort: 'date_desc', filter: 'all',
+};
+
 export type AdminOrders = {
   orders: AdminOrder[];
   total: number;
@@ -208,15 +218,18 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         isSession,
       ),
-    orders: (token: string, page = 1) =>
-      request(
-        `/admin/orders?page=${page}&limit=20`,
-        {
-          method: 'GET',
-          headers: auth(token),
-        },
+    orders: (token: string, page = 1, filters: AdminOrderFilters = defaultAdminOrderFilters) => {
+      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      if (filters.search.trim()) params.set('search', filters.search.trim());
+      if (filters.letter) params.set('letter', filters.letter);
+      if (filters.sort !== 'date_desc') params.set('sort', filters.sort);
+      if (filters.filter !== 'all') params.set('filter', filters.filter);
+      return request(
+        `/admin/orders?${params.toString()}`,
+        { method: 'GET', headers: auth(token) },
         isOrders,
-      ),
+      );
+    },
     products: (token: string) =>
       request(
         '/admin/products',
