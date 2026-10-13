@@ -10,6 +10,7 @@ import {
 } from "@/lib/shop-api";
 import { formatPrice } from "@/lib/shop-pricing";
 import { shortReference } from "@/lib/shipping";
+import { clearFinalizedCheckout } from "@/lib/checkout-storage";
 import BrandName from "@/components/layout/BrandName";
 
 export default function PaymentReturn() {
@@ -53,14 +54,7 @@ export default function PaymentReturn() {
       const result = await shopApi.checkoutStatus(sessionId);
       if (sequence !== requestSequence.current) return;
       setData(result);
-      if (result.paymentStatus !== "UNPAID") {
-        sessionStorage.removeItem("connectaCheckoutAttempt");
-        sessionStorage.removeItem("connectaCheckoutSession");
-        if (result.paymentStatus === "PAID") {
-          // A confirmed order is no longer an editable shopping draft.
-          sessionStorage.removeItem("connectaCartDraft");
-        }
-      }
+      clearFinalizedCheckout(sessionStorage, result.paymentStatus);
     } catch (problem) {
       if (sequence !== requestSequence.current) return;
       setError(
@@ -97,9 +91,11 @@ export default function PaymentReturn() {
     setLoading(true);
     setError("");
     try {
-      setData(await shopApi.cancelCheckout(sessionId));
-      sessionStorage.removeItem("connectaCheckoutAttempt");
-      sessionStorage.removeItem("connectaCheckoutSession");
+      const result = await shopApi.cancelCheckout(sessionId);
+      setData(result);
+      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus)) {
+        throw new Error("La réservation est encore active : le panier a été conservé.");
+      }
     } catch (problem) {
       setError(
         problem instanceof Error ? problem.message : "Annulation indisponible.",
