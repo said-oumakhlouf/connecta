@@ -8,7 +8,7 @@ import { formatPrice } from '@/lib/shop-pricing';
 import { getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CatalogPage() {
-  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
+  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, cartCount, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] pb-24 text-[#17191d] md:pb-18">
