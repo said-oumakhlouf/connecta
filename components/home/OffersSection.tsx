@@ -149,7 +149,7 @@ export default function OffersSection() {
             onClick={() => order()}
             className="group flex min-w-55 items-center justify-between gap-8 rounded-full bg-[#235bfa] px-6 py-4 text-xs font-semibold transition hover:bg-white hover:text-[#17191d]"
           >
-            Commander
+            Ajouter au panier
             <ArrowRight
               size={15}
               className="transition-transform group-hover:translate-x-1"
