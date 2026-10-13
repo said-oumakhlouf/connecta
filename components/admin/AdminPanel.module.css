@@ -805,3 +805,126 @@
 @media (min-width: 701px) and (max-width: 1000px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Orders search: filters and an A-Z index; safe on narrow mobile screens. */
+.orderSearchPanel {
+  margin-bottom: 22px;
+  padding: 21px;
+  border: 1px solid #e9eaed;
+  border-radius: 16px;
+  background: #fff;
+}
+.orderSearchForm > label,
+.orderSearchOptions > label {
+  display: grid;
+  gap: 7px;
+  color: #515866;
+  font-size: 11px;
+  font-weight: 600;
+}
+.orderSearchForm > div {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.orderSearchForm input,
+.orderSearchOptions select {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #dfe2e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #17191d;
+  font-size: 14px;
+}
+.orderSearchForm input:focus-visible,
+.orderSearchOptions select:focus-visible {
+  outline: 2px solid #90aeff;
+  outline-offset: 2px;
+}
+.orderSearchForm button { flex-shrink: 0; }
+.orderSearchOptions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-top: 15px;
+}
+.orderSearchOptions > label {
+  min-width: 150px;
+  flex: 1 1 175px;
+}
+.orderReset {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 6px;
+  color: #626977;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.letters {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 14px 0 8px;
+  scrollbar-width: thin;
+}
+.letters button {
+  min-width: 30px;
+  height: 34px;
+  padding: 0 6px;
+  border: 1px solid #e9eaed;
+  border-radius: 8px;
+  background: #f8f9fb;
+  color: #454b56;
+  font-size: 11px;
+  font-weight: 650;
+}
+.letters button:first-child { min-width: 48px; }
+.letters .letterSelected {
+  background: #235bfa;
+  color: white;
+  border-color: #235bfa;
+}
+.letters button:disabled,
+.orderReset:disabled { opacity: 0.5; }
+.orderSearchCaption {
+  margin: 7px 0 0;
+  color: #72767f;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.orderProducts {
+  display: grid;
+  gap: 5px;
+  margin-top: 17px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: #f7f8fa;
+}
+.orderProducts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12px;
+}
+.orderProducts span { overflow-wrap: anywhere; }
+.orderProducts strong { flex-shrink: 0; color: #235bfa; }
+.deliveryDate, .shippingDate {
+  margin: 14px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #287351;
+}
+.shippingDate { color: #626977; }
+.deliveryDate small { display: block; color: #72767f; }
+@media (max-width: 700px) {
+  .orderSearchPanel { padding: 15px; }
+  .orderSearchForm > div { flex-wrap: wrap; }
+  .orderSearchForm input { flex: 1 1 100%; }
+  .orderSearchForm button { width: 100%; }
+}
