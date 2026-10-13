@@ -30,7 +30,12 @@ test('mixed carts compute server-equivalent per-reference Duo discounts and limi
   lines = changeCartLine(lines, products[2], 1);
   assert.equal(countUnits(lines), 4);
   assert.deepEqual(getMultiCartPrice(products, lines), { count: 4, total: 8980, discount: 1000, valid: true });
-  assert.deepEqual(changeCartLine(lines, products[2], 7), lines); // over 10 units
+  const elevenUnits = changeCartLine(lines, products[2], 7);
+  assert.equal(countUnits(elevenUnits), 11);
+  assert.deepEqual(getMultiCartPrice(products, elevenUnits), {
+    count: 11, total: 22910, discount: 1000, valid: true,
+  });
+  assert.deepEqual(changeCartLine(elevenUnits, products[2], 20), elevenUnits); // only 15 in stock
   assert.equal(getMultiCartPrice(products, [{ productId: 2, quantity: 21 }]).valid, false);
   assert.equal(getMultiCartPrice(products, [{ productId: 999, quantity: 1 }]).valid, false);
   lines = changeCartLine(lines, products[1], -1);
@@ -99,12 +104,20 @@ test('browser-stored cart rejects duplicates, excessive quantities, and invalid 
   for (const value of [
     'invalid json',
     JSON.stringify([{ productId: 1, quantity: 7 }, { productId: 1, quantity: 1 }]),
-    JSON.stringify([{ productId: 1, quantity: 11 }]),
-    JSON.stringify([{ productId: 1, quantity: 8 }, { productId: 2, quantity: 4 }]),
+    JSON.stringify([{ productId: 1, quantity: 2_147_483_648 }]),
     JSON.stringify([{ productId: '1', quantity: 1 }]),
     JSON.stringify([{ productId: -1, quantity: 1 }]),
     JSON.stringify([{ productId: 1, quantity: 1.5 }]),
   ]) assert.deepEqual(parseCartDraft(value), []);
+});
+
+test('basket drafts survive navigation when they contain more than 10 items', () => {
+  const draft = [{ productId: 1, quantity: 12 }, { productId: 2, quantity: 13 }];
+  assert.deepEqual(parseCartDraft(JSON.stringify(draft)), draft);
+  const available = products.map(product => ({ ...product, stock: 50 }));
+  assert.deepEqual(getMultiCartPrice(available, draft), {
+    count: 25, total: 48970, discount: 6000, valid: true,
+  });
 });
 
 test('cancelling a Stripe reservation clears the cart count and all checkout storage', () => {
@@ -143,13 +156,13 @@ test('catalogue shows basket-adjusted availability without reserving database st
   assert.deepEqual(getCartStockAvailability(charger, selection, true), { inCart: 2, outsideCart: 15, canAdd: false }); // API stock already accounts for reservations.
 });
 
-test('catalogue stops adds at product stock and overall 10-unit order cap', () => {
+test('catalogue stops adds at actual product stock but not a global ten-unit cap', () => {
   const charger = { ...products[2], stock: 2 };
   assert.deepEqual(getCartStockAvailability(charger, [{ productId: charger.id, quantity: 2 }]), {
     inCart: 2, outsideCart: 0, canAdd: false,
   });
   assert.deepEqual(getCartStockAvailability(products[1], [
     { productId: 1, quantity: 8 }, { productId: 2, quantity: 2 },
-  ]), { inCart: 2, outsideCart: 18, canAdd: false });
+  ]), { inCart: 2, outsideCart: 18, canAdd: true });
   assert.equal(getCartStockAvailability({ ...charger, active: false }, []).canAdd, false);
 });
