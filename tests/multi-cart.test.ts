@@ -35,7 +35,9 @@ test('mixed carts compute server-equivalent per-reference Duo discounts and limi
   assert.deepEqual(getMultiCartPrice(products, elevenUnits), {
     count: 11, total: 22910, discount: 1000, valid: true,
   });
-  assert.deepEqual(changeCartLine(elevenUnits, products[2], 20), elevenUnits); // only 15 in stock
+  const fullStock = changeCartLine(elevenUnits, products[2], 20);
+  assert.deepEqual(fullStock.find(item => item.productId === products[2].id), { productId: 3, quantity: 15 });
+  assert.deepEqual(changeCartLine(fullStock, products[2], 1), fullStock); // only 15 in stock
   assert.equal(getMultiCartPrice(products, [{ productId: 2, quantity: 21 }]).valid, false);
   assert.equal(getMultiCartPrice(products, [{ productId: 999, quantity: 1 }]).valid, false);
   lines = changeCartLine(lines, products[1], -1);
