@@ -25,6 +25,21 @@ export function changeCartLine(
     : rest;
 }
 
+/** Display-only availability: putting an item in the cart does not reserve DB stock.
+ * After Stripe has reserved the basket, API stock already excludes those units.
+ */
+export function getCartStockAvailability(
+  product: ApiProduct,
+  items: CartLine[],
+  reserved = false,
+) {
+  const inCart = items.find(item => item.productId === product.id)?.quantity ?? 0;
+  const outsideCart = Math.max(0, product.stock - (reserved ? 0 : inCart));
+  const canAdd = !reserved && product.active &&
+    Math.min(outsideCart, Math.max(0, MAX_ORDER_UNITS - countUnits(items))) > 0;
+  return { inCart, outsideCart, canAdd };
+}
+
 export function getMultiCartPrice(products: ApiProduct[], items: CartLine[]) {
   const byId = new Map(products.map(product => [product.id, product]));
   let total = 0;
