@@ -125,8 +125,8 @@ export default function ProductPage() {
         ? 'Vérification…'
         : cta.status === 'ready'
           ? selectedOffer === 'duo'
-            ? 'Commander le Duo'
-            : 'Commander une paire'
+            ? 'Ajouter le Duo au panier'
+            : 'Ajouter une paire au panier'
           : 'Indisponible';
 
   return (
