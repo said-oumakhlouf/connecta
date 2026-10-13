@@ -10,7 +10,7 @@ import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice, getCartPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
-import { getMultiCartPrice } from '@/lib/multi-cart';
+import { getMultiCartPrice, getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CartDialog() {
   const {
@@ -156,6 +156,7 @@ export default function CartDialog() {
                 const item = catalog.find(p => p.id === line.productId);
                 const isHoco = item?.id === product?.id;
                 const lineAmount = item ? getCartPrice(item.price, item.duoPrice, line.quantity).total : 0;
+                const availability = item ? getCartStockAvailability(item, cartItems, hasCheckoutAttempt) : null;
                 return (
                   <div key={line.productId} className="rounded-2xl bg-[#f7f8fa] p-3 sm:p-4">
                     <div className="flex items-center gap-3">
@@ -181,7 +182,7 @@ export default function CartDialog() {
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
                       <span className="text-xs text-[#72767f]">
-                        {item ? `${item.stock} en stock` : 'Produit introuvable'}
+                        {item && availability ? `${availability.outsideCart} hors panier · ${line.quantity} ${hasCheckoutAttempt ? 'réservé(s)' : 'dans le panier'}` : 'Produit introuvable'}
                       </span>
                       <div className="flex items-center gap-3">
                         <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
@@ -192,7 +193,7 @@ export default function CartDialog() {
                         </button>
                         <span className="min-w-4 text-center text-xs font-semibold">{line.quantity}</span>
                         <button type="button" aria-label={`Augmenter ${item?.name ?? 'produit'}`}
-                          disabled={isSubmitting || hasCheckoutAttempt || !item || line.quantity >= item.stock || cartCount >= MAX_ORDER_UNITS}
+                          disabled={isSubmitting || hasCheckoutAttempt || !item || !availability?.canAdd}
                           onClick={() => updateProductQuantity(line.productId, 1)}
                           className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
                           <Plus size={14} />
