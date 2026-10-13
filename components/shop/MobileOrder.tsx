@@ -39,7 +39,7 @@ function DefaultMobileOrder() {
         onClick={() => order()}
         className="rounded-full bg-[#235bfa] px-5 py-3 text-[11px] font-semibold text-white shadow-[0_8px_22px_#235bfa22] transition active:scale-[0.98]"
       >
-        Commander
+        Ajouter au panier
       </button>
     </div>
   );
@@ -88,7 +88,7 @@ function ProductMobileOrder() {
         disabled={cta.disabled}
         className="shrink-0 rounded-full bg-[#235bfa] px-5 py-3 text-[11px] font-semibold text-white shadow-[0_8px_22px_#235bfa22] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#c9ccd2] disabled:shadow-none disabled:active:scale-100"
       >
-        {cta.status === 'checking' ? 'Vérification…' : cta.status === 'ready' || cta.status === 'submitting' ? 'Commander' : 'Indisponible'}
+        {cta.status === 'checking' ? 'Vérification…' : cta.status === 'ready' || cta.status === 'submitting' ? 'Ajouter au panier' : 'Indisponible'}
       </button>
     </div>
   );
