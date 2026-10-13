@@ -9,7 +9,7 @@ import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
-import { formatPrice, getCartPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
 import { getMultiCartPrice, getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CartDialog() {
@@ -98,7 +98,6 @@ export default function CartDialog() {
   const canSubmit =
     shippingFee !== undefined &&
     cartItems.length > 0 &&
-    cartCount <= MAX_ORDER_UNITS &&
     !catalogLoading &&
     !catalogError &&
     (hasCheckoutAttempt || priced.valid) &&
@@ -206,7 +205,7 @@ export default function CartDialog() {
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-[#72767f]">
-                {cartCount} article(s), maximum {MAX_ORDER_UNITS} par commande.
+                {cartCount} article(s) dans votre panier · quantités limitées au stock disponible.
               </p>
               {!hasCheckoutAttempt && (
                 <button type="button" disabled={isSubmitting || isCancellingCheckout}
