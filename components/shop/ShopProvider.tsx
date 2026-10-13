@@ -35,6 +35,7 @@ type ShopContextValue = {
   addProduct: (productId: number) => void;
   updateProductQuantity: (productId: number, change: number) => void;
   removeProduct: (productId: number) => void;
+  clearCart: () => void;
   cartOffer: Offer | null;
   cartCount: number;
   cartTotal: number;
@@ -286,6 +287,14 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     setOrderError(null);
   }
 
+  function clearCart() {
+    if (submissionRef.current || hasCheckoutAttempt) return;
+    setCartItems([]);
+    setOrderError(null);
+    setRequestedOffer(null);
+    setCartNotice('Panier vidé.');
+  }
+
   function openCart() {
     openDialog();
     if (!submissionRef.current) void refreshProduct();
@@ -403,6 +412,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         addProduct,
         updateProductQuantity,
         removeProduct,
+        clearCart,
         cartOffer,
         cartCount,
         cartTotal,
