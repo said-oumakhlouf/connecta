@@ -9,7 +9,7 @@ import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
-import { formatPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { formatPrice, getCartPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 import { getMultiCartPrice } from '@/lib/multi-cart';
 
 export default function CartDialog() {
@@ -152,9 +152,7 @@ export default function CartDialog() {
               {cartItems.map((line) => {
                 const item = catalog.find(p => p.id === line.productId);
                 const isHoco = item?.id === product?.id;
-                const lineAmount = item ? Math.floor(line.quantity / 2) *
-                  Math.min(item.duoPrice ?? item.price * 2, item.price * 2) +
-                  (line.quantity % 2) * item.price : 0;
+                const lineAmount = item ? getCartPrice(item.price, item.duoPrice, line.quantity).total : 0;
                 return (
                   <div key={line.productId} className="rounded-2xl bg-[#f7f8fa] p-3 sm:p-4">
                     <div className="flex items-center gap-3">
