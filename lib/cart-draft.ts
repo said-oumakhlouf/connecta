@@ -12,8 +12,8 @@ export function parseCartDraft(raw: string | null): CartLine[] {
     for (const item of parsed) {
       if (!item || typeof item !== 'object' ||
           !('productId' in item) || !('quantity' in item) ||
-          !Number.isSafeInteger(item.productId) || item.productId <= 0 ||
-          !Number.isSafeInteger(item.quantity) || item.quantity <= 0) return [];
+          typeof item.productId !== 'number' || !Number.isSafeInteger(item.productId) || item.productId <= 0 ||
+          typeof item.quantity !== 'number' || !Number.isSafeInteger(item.quantity) || item.quantity <= 0) return [];
       lines.push({ productId: item.productId as number, quantity: item.quantity as number });
     }
     if (new Set(lines.map(line => line.productId)).size !== lines.length ||
