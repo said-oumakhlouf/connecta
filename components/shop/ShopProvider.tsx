@@ -21,7 +21,7 @@ import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
 import { parseCartDraft } from '@/lib/cart-draft';
 import { clearFinalizedCheckout } from '@/lib/checkout-storage';
-import { MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { getMaxCartCount } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
   selectedOffer: OfferId;
@@ -199,9 +199,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   const cartCount = priced.count;
   const cartTotal = priced.total;
   const cartDiscount = priced.discount;
-  const otherUnits = cartCount - (hocoInCart?.quantity ?? 0);
   const maxCartCount = product?.active
-    ? Math.floor(Math.min(product.stock, MAX_ORDER_UNITS - otherUnits) / offer.quantity)
+    ? getMaxCartCount(product.stock, offer.quantity)
     : 0;
 
   // A click made before the catalog loaded is handled without creating a checkout.
@@ -232,9 +231,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     }
     const desired = offers[id].quantity;
     const previous = cartItems.find(item => item.productId === product?.id)?.quantity ?? 0;
-    if (product && (!product.active || previous + desired > product.stock ||
-      cartCount + desired > MAX_ORDER_UNITS)) {
-      setOrderError('Stock insuffisant ou limite de 10 articles atteinte.');
+    if (product && (!product.active || previous + desired > product.stock)) {
+      setOrderError('La quantité demandée dépasse le stock disponible.');
       openDialog();
       return;
     }
@@ -261,9 +259,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       openDialog();
       return;
     }
-    if (cartCount >= MAX_ORDER_UNITS ||
-        (cartItems.find(line => line.productId === productId)?.quantity ?? 0) >= item.stock) {
-      setOrderError('Stock insuffisant ou limite de 10 articles atteinte.');
+    if ((cartItems.find(line => line.productId === productId)?.quantity ?? 0) >= item.stock) {
+      setOrderError('La quantité demandée dépasse le stock disponible.');
       openDialog();
       return;
     }
@@ -343,8 +340,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
 
   async function submitOrder(customer: CustomerDetails, memberCheckout: boolean) {
     if (submissionRef.current || !cartItems.length || catalogLoading || catalogError) return;
-    if ((!hasCheckoutAttempt && !getMultiCartPrice(catalog, cartItems).valid) ||
-        cartCount > MAX_ORDER_UNITS) {
+    if (!hasCheckoutAttempt && !getMultiCartPrice(catalog, cartItems).valid) {
       setOrderError('Stock insuffisant ou panier modifié. Actualisez le panier.');
       return;
     }
