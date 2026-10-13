@@ -123,6 +123,10 @@ export function isProduct(value: unknown): value is ApiProduct {
   );
 }
 
+function isProducts(value: unknown): value is ApiProduct[] {
+  return Array.isArray(value) && value.every(isProduct);
+}
+
 function isOrder(value: unknown): value is ApiOrder {
   return (
     isRecord(value) &&
@@ -242,6 +246,29 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         isCheckout,
       ),
+    checkoutItems: (
+      customer: CustomerDetails,
+      items: Array<{ productId: number; quantity: number }>,
+      checkoutKey: string,
+      memberCheckout = false,
+    ) =>
+      request(
+        memberCheckout ? '/members/checkout' : '/payments/checkout',
+        {
+          method: 'POST',
+          ...(memberCheckout ? { credentials: 'include' as const } : {}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: customer.customerName.trim(),
+            customerEmail: customer.customerEmail.trim().toLowerCase(),
+            items,
+            checkoutKey,
+            shippingAddress: customer.shippingAddress,
+            expectedShippingFee: customer.expectedShippingFee,
+          }),
+        },
+        isCheckout,
+      ),
     checkoutStatus: (sessionId: string) =>
       request(
         `/payments/checkout/${encodeURIComponent(sessionId)}`,
@@ -254,6 +281,7 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         { method: 'POST' },
         isCheckoutStatus,
       ),
+    getProducts: () => request('/products', { method: 'GET' }, isProducts),
     getProduct: () =>
       request('/products/hoco-ew75', { method: 'GET' }, isProduct),
     createOrder: (
