@@ -5,9 +5,10 @@ import { ArrowRight, Cable, Package, ShoppingBag } from 'lucide-react';
 import Container from '@/components/layout/Container';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice } from '@/lib/shop-pricing';
+import { getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CatalogPage() {
-  const { catalog, catalogLoading, catalogError, addProduct, openCart, cartCount, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
+  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] pb-24 text-[#17191d] md:pb-18">
@@ -39,7 +40,7 @@ export default function CatalogPage() {
         {hasCheckoutAttempt && (
           <div role="status" className="mb-6 rounded-2xl border border-[#f1d2aa] bg-[#fff8ee] p-5 text-sm text-[#835424]">
             Vous avez une réservation Stripe en cours. Pour ajouter d'autres produits,
-            ouvrez le panier et annulez cette réservation, sans perdre votre sélection.
+            ouvrez le panier pour l’annuler. Cela libérera le stock et videra votre panier.
             <button type="button" onClick={openCart} className="ml-2 font-semibold underline">
               Gérer la réservation
             </button>
@@ -49,7 +50,8 @@ export default function CatalogPage() {
           {catalog.map(item => {
             const isHoco = item.slug === 'hoco-ew75';
             const isCable = item.slug.includes('cable');
-            const soldOut = !item.active || item.stock < 1;
+            const availability = getCartStockAvailability(item, cartItems, hasCheckoutAttempt);
+            const soldOut = !item.active || (item.stock < 1 && availability.inCart === 0);
             return (
               <article key={item.id} className="flex overflow-hidden flex-col rounded-[24px] border border-[#e4e7ec] bg-white">
                 <div className="relative grid aspect-[5/4] place-items-center overflow-hidden bg-[#f0f3f8]">
@@ -67,10 +69,26 @@ export default function CatalogPage() {
                 <div className="flex flex-1 flex-col p-6">
                   <p className="text-[10px] font-bold tracking-[1.6px] text-[#90959e]">ACCESSOIRES CONNECTA</p>
                   <h2 className="mt-2 text-xl font-semibold tracking-[-0.6px]">{item.name}</h2>
-                  <p className="mt-2 text-xs text-[#72767f]">{soldOut ? 'Épuisé' : `${item.stock} disponible(s)`}</p>
+                  <div className="mt-2 space-y-1 text-xs text-[#72767f]" aria-live="polite">
+                    {soldOut ? (
+                      <p>Épuisé</p>
+                    ) : availability.inCart ? (
+                      <>
+                        <p className="font-medium text-[#235bfa]">
+                          {availability.outsideCart} restant(s) hors panier
+                        </p>
+                        <p>
+                          {availability.inCart} {hasCheckoutAttempt ? 'réservé(s)' : 'dans votre panier'}
+                          {!hasCheckoutAttempt && ` · ${item.stock} en stock`}
+                        </p>
+                      </>
+                    ) : (
+                      <p>{item.stock} disponible(s)</p>
+                    )}
+                  </div>
                   <div className="mt-auto flex items-end justify-between gap-3 pt-7">
                     <strong className="text-2xl tracking-[-0.8px]">{formatPrice(item.price)}</strong>
-                    <button type="button" disabled={soldOut || isSubmitting || hasCheckoutAttempt || cartCount >= 10}
+                    <button type="button" disabled={isSubmitting || !availability.canAdd}
                       onClick={() => addProduct(item.id)}
                       className="inline-flex items-center gap-2 rounded-full bg-[#235bfa] px-5 py-3 text-xs font-semibold text-white transition hover:bg-[#1748cb] disabled:cursor-not-allowed disabled:bg-[#b5bdca]">
                       Ajouter <ArrowRight size={14} />
