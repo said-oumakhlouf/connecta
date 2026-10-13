@@ -3,6 +3,7 @@ import test from 'node:test';
 import { checkoutAttempt } from '../lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice } from '../lib/multi-cart';
 import { parseCartDraft } from '../lib/cart-draft';
+import { clearFinalizedCheckout } from '../lib/checkout-storage';
 import { createShopApi } from '../lib/shop-api';
 
 const products = [
@@ -104,4 +105,30 @@ test('browser-stored cart rejects duplicates, excessive quantities, and invalid 
     JSON.stringify([{ productId: -1, quantity: 1 }]),
     JSON.stringify([{ productId: 1, quantity: 1.5 }]),
   ]) assert.deepEqual(parseCartDraft(value), []);
+});
+
+test('cancelling a Stripe reservation clears the cart count and all checkout storage', () => {
+  for (const status of ['EXPIRED', 'PAID'] as const) {
+    const store = new Map<string, string>([
+      ['connectaCheckoutAttempt', '{"items":[{"productId":2,"quantity":1}]}'],
+      ['connectaCheckoutSession', '{"sessionId":"cs_test_123"}'],
+      ['connectaCartDraft', '[{"productId":2,"quantity":1}]'],
+    ]);
+    const storage = { removeItem: (key: string) => { store.delete(key); } };
+    assert.equal(clearFinalizedCheckout(storage, status), true);
+    assert.equal(store.size, 0);
+    assert.equal(countUnits(parseCartDraft(store.get('connectaCartDraft') ?? null)), 0);
+  }
+});
+
+test('an unfinished Stripe payment cannot be silently discarded', () => {
+  const store = new Map<string, string>([
+    ['connectaCheckoutAttempt', '{"items":[{"productId":1,"quantity":1}]}'],
+    ['connectaCheckoutSession', '{"sessionId":"cs_test_abc"}'],
+    ['connectaCartDraft', '[{"productId":1,"quantity":1}]'],
+  ]);
+  const storage = { removeItem: (key: string) => { store.delete(key); } };
+  assert.equal(clearFinalizedCheckout(storage, 'UNPAID'), false);
+  assert.equal(store.size, 3);
+  assert.equal(countUnits(parseCartDraft(store.get('connectaCartDraft') ?? null)), 1);
 });
