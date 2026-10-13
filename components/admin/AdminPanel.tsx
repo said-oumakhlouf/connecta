@@ -28,6 +28,8 @@ import {
   type AdminProduct,
   type AdminSession,
   type AdminAnalytics,
+  type AdminOrderFilters,
+  defaultAdminOrderFilters,
 } from '@/lib/admin-api';
 import OrdersView from './OrdersView';
 import StockView from './StockView';
@@ -39,6 +41,8 @@ export default function AdminPanel() {
   const [password, setPassword] = useState('');
   const [tab, setTab] = useState<'orders' | 'stock'>('orders');
   const [orders, setOrders] = useState<AdminOrders | null>(null);
+  const [orderFilters, setOrderFilters] = useState<AdminOrderFilters>(defaultAdminOrderFilters);
+  const orderFiltersRef = useRef<AdminOrderFilters>(defaultAdminOrderFilters);
   const [products, setProducts] = useState<AdminProduct[] | null>(null);
   const [month, setMonth] = useState(() => {
     const parts = new Intl.DateTimeFormat('fr-FR', {
@@ -64,6 +68,8 @@ export default function AdminPanel() {
     requestSequence.current++;
     setSession(null);
     setOrders(null);
+    orderFiltersRef.current = defaultAdminOrderFilters;
+    setOrderFilters(defaultAdminOrderFilters);
     setProducts(null);
     setAnalytics(null);
     setLoading(false);
@@ -100,7 +106,7 @@ export default function AdminPanel() {
       }
       try {
         const [nextOrders, nextProducts, nextAnalytics] = await Promise.all([
-          adminApi.orders(token, page),
+          adminApi.orders(token, page, orderFiltersRef.current),
           adminApi.products(token),
           adminApi.analytics(token, selectedMonth),
         ]);
@@ -162,6 +168,8 @@ export default function AdminPanel() {
       setSession(nextSession);
       setPassword('');
       setTab('orders');
+      orderFiltersRef.current = defaultAdminOrderFilters;
+      setOrderFilters(defaultAdminOrderFilters);
     } catch (problem) {
       reportError(problem);
     } finally {
@@ -469,6 +477,14 @@ export default function AdminPanel() {
         {tab === 'orders' ? (
           <OrdersView
             data={orders}
+            filters={orderFilters}
+            onFilters={(next) => {
+              if (blocked) return;
+              orderFiltersRef.current = next;
+              setOrderFilters(next);
+              setOrders(null);
+              void load(session.token, 1);
+            }}
             loading={blocked}
             pendingOrderId={pendingOrderId}
             onStatus={updateOrderStatus}
