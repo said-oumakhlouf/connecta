@@ -19,7 +19,7 @@ import {
 } from '@/lib/shop-api';
 import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
-import { getCartPrice, getMaxCartCount, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
   selectedOffer: OfferId;
