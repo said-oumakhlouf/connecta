@@ -19,6 +19,7 @@ import {
 } from '@/lib/shop-api';
 import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
+import { parseCartDraft } from '@/lib/cart-draft';
 import { MAX_ORDER_UNITS } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
@@ -114,23 +115,17 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     try {
       const saved = JSON.parse(sessionStorage.getItem('connectaCheckoutAttempt') ?? 'null') as
         { items?: CartLine[]; productId?: number; quantity?: number } | null;
-      const candidates = Array.isArray(saved?.items)
+      const candidates = parseCartDraft(JSON.stringify(Array.isArray(saved?.items)
         ? saved.items
         : saved?.productId && saved?.quantity
           ? [{ productId: saved.productId, quantity: saved.quantity }]
-          : [];
-      const valid = (items: CartLine[]) =>
-        items.length > 0 && items.length <= MAX_ORDER_UNITS &&
-        items.every(line => Number.isInteger(line.productId) && line.productId > 0 &&
-          Number.isInteger(line.quantity) && line.quantity > 0) &&
-        new Set(items.map(line => line.productId)).size === items.length &&
-        countUnits(items) <= MAX_ORDER_UNITS;
-      if (valid(candidates)) {
+          : []));
+      if (candidates.length > 0) {
         setHasCheckoutAttempt(true);
         setCartItems(candidates);
       } else {
-        const draft = JSON.parse(sessionStorage.getItem('connectaCartDraft') ?? 'null') as CartLine[] | null;
-        if (Array.isArray(draft) && valid(draft)) setCartItems(draft);
+        const draft = parseCartDraft(sessionStorage.getItem('connectaCartDraft'));
+        if (draft.length > 0) setCartItems(draft);
       }
     } catch {
       /* Storage can be unavailable or contain malformed data. */
