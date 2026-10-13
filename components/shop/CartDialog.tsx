@@ -26,6 +26,8 @@ export default function CartDialog() {
     orderError,
     isSubmitting,
     hasCheckoutAttempt,
+    isCancellingCheckout,
+    cancelCurrentCheckout,
     cartOpenVersion,
     closeCart,
     submitOrder,
@@ -202,7 +204,7 @@ export default function CartDialog() {
             </div>
             <p className="mt-3 text-xs text-[#72767f]">
               {cartCount} article(s) au total, maximum {MAX_ORDER_UNITS} unités par commande.
-              Une seule réservation non payée par email.
+              Vous pouvez continuer vos achats avant de payer.
             </p>
             {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
               <p role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
