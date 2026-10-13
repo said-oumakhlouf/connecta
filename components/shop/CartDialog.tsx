@@ -34,6 +34,7 @@ export default function CartDialog() {
     refreshProduct,
     updateProductQuantity,
     removeProduct,
+    clearCart,
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -202,8 +203,19 @@ export default function CartDialog() {
                 );
               })}
             </div>
-            <p className="mt-3 text-xs text-[#72767f]">
-              {cartCount} article(s) au total, maximum {MAX_ORDER_UNITS} unités par commande.
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-[#72767f]">
+                {cartCount} article(s), maximum {MAX_ORDER_UNITS} par commande.
+              </p>
+              {!hasCheckoutAttempt && (
+                <button type="button" disabled={isSubmitting || isCancellingCheckout}
+                  onClick={clearCart}
+                  className="text-xs font-medium text-[#72767f] underline hover:text-[#17191d] disabled:opacity-40">
+                  Vider le panier
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-[#72767f]">
               Vous pouvez continuer vos achats avant de payer.
             </p>
             {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
