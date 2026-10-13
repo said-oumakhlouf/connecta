@@ -25,7 +25,7 @@ export async function checkoutAttempt(
     /* A stale storage value must not block a new checkout. */
   }
   const key = cryptoApi.randomUUID();
-  const basket = payload as { quantity?: unknown; productId?: unknown };
+  const basket = payload as { quantity?: unknown; productId?: unknown; items?: unknown };
   storage.setItem(
     'connectaCheckoutAttempt',
     JSON.stringify({
@@ -33,6 +33,10 @@ export async function checkoutAttempt(
       fingerprint,
       quantity: basket.quantity,
       productId: basket.productId,
+      items: Array.isArray(basket.items) && basket.items.length <= 10 && basket.items.every(
+        item => item && Number.isInteger(item.productId) && item.productId > 0 &&
+          Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= 10,
+      ) ? basket.items : undefined,
     }),
   );
   return key;
