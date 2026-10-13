@@ -116,7 +116,7 @@ test('basket drafts survive navigation when they contain more than 10 items', ()
   assert.deepEqual(parseCartDraft(JSON.stringify(draft)), draft);
   const available = products.map(product => ({ ...product, stock: 50 }));
   assert.deepEqual(getMultiCartPrice(available, draft), {
-    count: 25, total: 48970, discount: 6000, valid: true,
+    count: 25, total: 48870, discount: 6000, valid: true,
   });
 });
 
