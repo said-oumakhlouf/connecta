@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import { ArrowRight, Cable, LoaderCircle, Minus, Package, Plus, X } from 'lucide-react';
 import ShippingFields from './ShippingFields';
 import { shopApi } from '@/lib/shop-api';
 import { memberApi, MemberApiError, type MemberProfile } from '@/lib/member-api';
@@ -9,21 +9,20 @@ import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
-import { PRODUCTS } from '@/data/products';
 import { formatPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { getMultiCartPrice } from '@/lib/multi-cart';
 
 export default function CartDialog() {
   const {
     dialogRef,
-    cart,
-    cartOffer,
+    cartItems,
+    catalog,
+    catalogLoading,
+    catalogError,
     cartCount,
     cartTotal,
     cartDiscount,
-    maxCartCount,
     product,
-    productLoading,
-    productError,
     orderError,
     isSubmitting,
     hasCheckoutAttempt,
@@ -31,7 +30,8 @@ export default function CartDialog() {
     closeCart,
     submitOrder,
     refreshProduct,
-    updateCartQuantity,
+    updateProductQuantity,
+    removeProduct,
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -91,15 +91,14 @@ export default function CartDialog() {
   }, [cartOpenVersion, accountRetry]);
 
   const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
-  const unavailable = product && (!product.active || product.stock === 0);
-  const insufficientStock = product && cartCount > product.stock;
+  const priced = getMultiCartPrice(catalog, cartItems);
   const canSubmit =
     shippingFee !== undefined &&
+    cartItems.length > 0 &&
     cartCount <= MAX_ORDER_UNITS &&
-    !!product &&
-    !productLoading &&
-    !productError &&
-    (hasCheckoutAttempt || (!unavailable && !insufficientStock)) &&
+    !catalogLoading &&
+    !catalogError &&
+    (hasCheckoutAttempt || priced.valid) &&
     !isSubmitting &&
     accountState === 'ready';
 
@@ -147,104 +146,83 @@ export default function CartDialog() {
           </button>
         </div>
 
-        {cart && cartOffer ? (
+        {cartItems.length > 0 ? (
           <form onSubmit={handleSubmit} aria-busy={isSubmitting}>
-            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#f7f8fa] p-3 sm:gap-4 sm:p-4">
-              <div className="h-18 w-18 shrink-0 overflow-hidden rounded-xl bg-white">
-                <div className="h-75 w-80 origin-top-left scale-[0.225]">
-                  <ProductVisual variant="case" />
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-bold tracking-[1.2px] text-[#90959e]">
-                  {cartOffer.id === 'duo' ? 'PACK DUO' : 'SOLO'}
-                </span>
-                <h3 className="mt-1 text-base font-semibold">
-                  {product?.name ?? PRODUCTS.ew75.name}
-                </h3>
-                <p className="mt-1 text-xs text-[#72767f]">
-                  {PRODUCTS.ew75.color} · {cartOffer.title}
-                </p>
-              </div>
-              <strong className="shrink-0 text-lg font-semibold tracking-[-0.8px]">
-                {formatPrice(cartOffer.price * 100)}
-              </strong>
+            <div className="mt-6 space-y-3">
+              {cartItems.map((line) => {
+                const item = catalog.find(p => p.id === line.productId);
+                const isHoco = item?.id === product?.id;
+                const lineAmount = item ? Math.floor(line.quantity / 2) *
+                  Math.min(item.duoPrice ?? item.price * 2, item.price * 2) +
+                  (line.quantity % 2) * item.price : 0;
+                return (
+                  <div key={line.productId} className="rounded-2xl bg-[#f7f8fa] p-3 sm:p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-white text-[#235bfa]">
+                        {isHoco ? (
+                          <div className="h-75 w-80 origin-top-left scale-[0.2]">
+                            <ProductVisual variant="case" />
+                          </div>
+                        ) : item?.slug.includes('cable') ? <Cable size={25} /> : <Package size={25} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold">{item?.name ?? 'Produit indisponible'}</h3>
+                        <p className="mt-1 text-xs text-[#72767f]">
+                          {item ? `${formatPrice(item.price)} l’unité` : 'Référence non disponible'}
+                        </p>
+                        <button type="button" disabled={isSubmitting || hasCheckoutAttempt}
+                          onClick={() => removeProduct(line.productId)}
+                          className="mt-2 text-[11px] text-[#72767f] underline disabled:opacity-40">
+                          Retirer
+                        </button>
+                      </div>
+                      <strong className="text-sm font-semibold">{item ? formatPrice(lineAmount) : '—'}</strong>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
+                      <span className="text-xs text-[#72767f]">
+                        {item ? `${item.stock} en stock` : 'Produit introuvable'}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
+                          disabled={isSubmitting || hasCheckoutAttempt || !item}
+                          onClick={() => updateProductQuantity(line.productId, -1)}
+                          className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                          <Minus size={14} />
+                        </button>
+                        <span className="min-w-4 text-center text-xs font-semibold">{line.quantity}</span>
+                        <button type="button" aria-label={`Augmenter ${item?.name ?? 'produit'}`}
+                          disabled={isSubmitting || hasCheckoutAttempt || !item || line.quantity >= item.stock || cartCount >= MAX_ORDER_UNITS}
+                          onClick={() => updateProductQuantity(line.productId, 1)}
+                          className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-
-            <div className="mt-5 flex items-center justify-between border-b border-[#e9eaed] pb-5">
-              <div>
-                <span className="block text-sm font-medium">
-                  {cartOffer.id === 'duo'
-                    ? 'Nombre de packs'
-                    : 'Nombre de paires'}
-                </span>
-                <span className="mt-1 block text-xs text-[#8b9098]">
-                  {cartCount} paire{cartCount > 1 ? 's' : ''} au total
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  aria-label="Diminuer la quantité"
-                  disabled={cart.count <= 1 || isSubmitting || productLoading}
-                  onClick={() => updateCartQuantity(-1)}
-                  className="grid size-9 place-items-center rounded-full border border-[#e0e3e8] bg-white disabled:opacity-30"
-                >
-                  <Minus size={14} />
-                </button>
-                <span
-                  aria-live="polite"
-                  className="min-w-5 text-center text-sm font-semibold"
-                >
-                  {cart.count}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Augmenter la quantité"
-                  disabled={
-                    cart.count >= maxCartCount || isSubmitting || productLoading
-                  }
-                  onClick={() => updateCartQuantity(1)}
-                  className="grid size-9 place-items-center rounded-full border border-[#e0e3e8] bg-white disabled:opacity-30"
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-            </div>
-
-            <div aria-live="polite" className="mt-3 text-xs text-[#72767f]">
-              {productLoading
-                ? 'Vérification du prix et du stock…'
-                : product
-                  ? `${product.stock} paire(s) en stock`
-                  : null}
-            </div>
-            <p className="mt-2 text-xs text-[#72767f]">
-              Maximum 10 paires par commande (5 packs Duo). Une seule réservation
-              non payée par email : annulez-la avant de changer votre commande.
+            <p className="mt-3 text-xs text-[#72767f]">
+              {cartCount} article(s) au total, maximum {MAX_ORDER_UNITS} unités par commande.
+              Une seule réservation non payée par email.
             </p>
-            {(productError || unavailable || insufficientStock) && (
-              <div
-                role="alert"
-                className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs leading-5 text-[#ae302a]"
-              >
-                {productError ??
-                  (unavailable
-                    ? 'Ce produit est actuellement épuisé.'
-                    : 'La quantité demandée dépasse le stock disponible. Diminuez la quantité ou choisissez une paire Solo.')}
-                {productError && (
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      void refreshProduct();
-                    }}
-                    className="mt-2 block font-semibold underline"
-                  >
-                    Actualiser la disponibilité
-                  </button>
-                )}
+            {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
+              <p role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
+                Un produit est épuisé, inactif ou le panier dépasse le stock disponible.
+              </p>
+            )}
+            {catalogError && (
+              <div role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
+                {catalogError}
+                <button type="button" className="ml-2 underline" onClick={() => void refreshProduct()}>
+                  Actualiser
+                </button>
               </div>
+            )}
+            {hasCheckoutAttempt && (
+              <p className="mt-3 text-xs text-[#72767f]">
+                Réservation en cours : le panier est verrouillé pour permettre une reprise sûre du paiement.
+              </p>
             )}
 
             <div className="mt-4 space-y-3 border-b border-[#e9eaed] pb-5 text-sm">
@@ -392,7 +370,9 @@ export default function CartDialog() {
               Continuer mes achats
             </button>
           </form>
-        ) : null}
+        ) : (
+          <p className="mt-6 text-sm text-[#72767f]">Votre panier est vide. <a href="/boutique" className="text-[#235bfa] underline">Découvrir la boutique</a></p>
+        )}
       </div>
     </dialog>
   );
