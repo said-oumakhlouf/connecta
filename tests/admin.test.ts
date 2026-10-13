@@ -119,6 +119,25 @@ test('admin reads order snapshots using authorization and pagination', async () 
   assert.equal(data.orders[0].items[0].productName, 'Hoco EW75');
 });
 
+test('admin sends global order search, alphabetical index and delivery filters securely', async () => {
+  const api = createAdminApi('http://api.test', async (url, options) => {
+    assert.equal(
+      url,
+      'http://api.test/admin/orders?page=2&limit=20&search=Alice+Chargeur&letter=A&sort=name_asc&filter=delivered',
+    );
+    assert.equal(new Headers(options?.headers).get('Authorization'), `Bearer ${token}`);
+    return json({ page: 2, limit: 20, total: 22, orders: [] });
+  });
+  const result = await api.orders(token, 2, {
+    search: ' Alice Chargeur ',
+    letter: 'A',
+    sort: 'name_asc',
+    filter: 'delivered',
+  });
+  assert.equal(result.total, 22);
+  assert.equal(result.page, 2);
+});
+
 test('restock sends an increment without replacing stock or prices', async () => {
   const api = createAdminApi('http://api.test', async (url, options) => {
     assert.equal(url, 'http://api.test/admin/products/7/restock');
