@@ -10,7 +10,7 @@ import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
-import { getMultiCartPrice, getCartStockAvailability } from '@/lib/multi-cart';
+import { getMultiCartPrice, getCartStockAvailability, getReservedTotals } from '@/lib/multi-cart';
 
 export default function CartDialog() {
   const {
@@ -28,6 +28,9 @@ export default function CartDialog() {
     hasCheckoutAttempt,
     isCancellingCheckout,
     cancelCurrentCheckout,
+    reservation,
+    isResumingCheckout,
+    resumeCheckout,
     cartOpenVersion,
     closeCart,
     submitOrder,
@@ -94,18 +97,28 @@ export default function CartDialog() {
   }, [cartOpenVersion, accountRetry]);
 
   const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
+  // A pending order shows only its summary and two actions, never the form again.
+  const reserved = hasCheckoutAttempt;
   const priced = getMultiCartPrice(catalog, cartItems, hasCheckoutAttempt);
   const canSubmit =
     shippingFee !== undefined &&
     cartItems.length > 0 &&
     !catalogLoading &&
     !catalogError &&
-    (hasCheckoutAttempt || priced.valid) &&
+    !reserved &&
+    priced.valid &&
     !isSubmitting &&
     accountState === 'ready';
 
+  const reservedTotals = getReservedTotals(cartTotal, reservation);
+  const reservationBusy = isCancellingCheckout || isResumingCheckout || isSubmitting;
+  const reservedUntil = reservation?.expiresAt
+    ? new Date(reservation.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : null;
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (reserved) return;
     if (shippingFee === undefined) return;
     if (accountState !== 'ready') return;
     void submitOrder({ customerName, customerEmail, shippingAddress, expectedShippingFee: shippingFee }, !!member);
@@ -171,38 +184,47 @@ export default function CartDialog() {
                         <p className="mt-1 text-xs text-[#72767f]">
                           {item ? `${formatPrice(item.price)} l’unité` : 'Référence non disponible'}
                         </p>
-                        <button type="button" disabled={isSubmitting || hasCheckoutAttempt}
-                          onClick={() => removeProduct(line.productId)}
-                          className="mt-2 text-[11px] text-[#72767f] underline disabled:opacity-40">
-                          Retirer
-                        </button>
+                        {!reserved && (
+                          <button type="button" disabled={isSubmitting}
+                            onClick={() => removeProduct(line.productId)}
+                            className="mt-2 text-[11px] text-[#72767f] underline disabled:opacity-40">
+                            Retirer
+                          </button>
+                        )}
                       </div>
                       <strong className="text-sm font-semibold">{item ? formatPrice(lineAmount) : '—'}</strong>
                     </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
-                      <span className="text-xs text-[#72767f]">
-                        {item && availability ? `${line.quantity} ${hasCheckoutAttempt ? (line.quantity > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · ${availability.outsideCart} encore disponible${availability.outsideCart > 1 ? 's' : ''}` : 'Produit introuvable'}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
-                          disabled={isSubmitting || hasCheckoutAttempt || !item}
-                          onClick={() => updateProductQuantity(line.productId, -1)}
-                          className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
-                          <Minus size={14} />
-                        </button>
-                        <span className="min-w-4 text-center text-xs font-semibold">{line.quantity}</span>
-                        <button type="button" aria-label={`Augmenter ${item?.name ?? 'produit'}`}
-                          disabled={isSubmitting || hasCheckoutAttempt || !item || !availability?.canAdd}
-                          onClick={() => updateProductQuantity(line.productId, 1)}
-                          className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
-                          <Plus size={14} />
-                        </button>
+                    {reserved ? (
+                      <p className="mt-3 border-t border-[#e1e4e9] pt-3 text-xs text-[#72767f]">
+                        Quantité : {line.quantity}
+                      </p>
+                    ) : (
+                      <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
+                        <span className="text-xs text-[#72767f]">
+                          {item && availability ? `${line.quantity} ${hasCheckoutAttempt ? (line.quantity > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · ${availability.outsideCart} encore disponible${availability.outsideCart > 1 ? 's' : ''}` : 'Produit introuvable'}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
+                            disabled={isSubmitting || hasCheckoutAttempt || !item}
+                            onClick={() => updateProductQuantity(line.productId, -1)}
+                            className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                            <Minus size={14} />
+                          </button>
+                          <span className="min-w-4 text-center text-xs font-semibold">{line.quantity}</span>
+                          <button type="button" aria-label={`Augmenter ${item?.name ?? 'produit'}`}
+                            disabled={isSubmitting || hasCheckoutAttempt || !item || !availability?.canAdd}
+                            onClick={() => updateProductQuantity(line.productId, 1)}
+                            className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                            <Plus size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+            {!reserved && <>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-[#72767f]">
                 {cartCount} article(s) dans votre panier · quantités limitées au stock disponible.
@@ -218,6 +240,7 @@ export default function CartDialog() {
             <p className="mt-2 text-xs text-[#72767f]">
               Vous pouvez continuer vos achats avant de payer.
             </p>
+            </>}
             {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
               <p role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
                 Un produit est épuisé, inactif ou le panier dépasse le stock disponible.
@@ -231,18 +254,6 @@ export default function CartDialog() {
                 </button>
               </div>
             )}
-            {hasCheckoutAttempt && (
-              <div className="mt-3 space-y-2 rounded-xl border border-[#f1d2aa] bg-[#fff8ee] p-4 text-xs leading-5 text-[#835424]">
-                <p>Une réservation Stripe est déjà en cours. L’annuler libérera le stock et videra votre panier. Vous pourrez ensuite recommencer vos achats.</p>
-                <button type="button" disabled={isCancellingCheckout || isSubmitting}
-                  onClick={() => void cancelCurrentCheckout()}
-                  className="block font-semibold underline disabled:opacity-40">
-                  {isCancellingCheckout ? 'Annulation en cours…' : 'Annuler la commande et vider mon panier'}
-                </button>
-                <a href="/paiement?retour=1" className="block underline">Vérifier ou reprendre le paiement</a>
-              </div>
-            )}
-
             <div className="mt-4 space-y-3 border-b border-[#e9eaed] pb-5 text-sm">
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-[#235bfa]">
@@ -253,15 +264,56 @@ export default function CartDialog() {
               <div className="flex items-end justify-between">
                 <div>
                   <span className="block text-[#72767f]">Sous-total des articles</span>
-                  <span className="mt-1 block text-[10px] text-[#a0a5ad]">
-                    Livraison calculée selon la destination
-                  </span>
+                  {!reserved && (
+                    <span className="mt-1 block text-[10px] text-[#a0a5ad]">
+                      Livraison calculée selon la destination
+                    </span>
+                  )}
                 </div>
                 <strong className="text-[30px] font-semibold tracking-[-1.5px]">
-                  {formatPrice(cartTotal)}
+                  {formatPrice(reservedTotals.itemsTotal)}
                 </strong>
               </div>
             </div>
+
+            {reserved ? (
+              <>
+                <div className="mt-5 space-y-3 rounded-2xl bg-[#f7f8fa] p-4 text-sm" aria-live="polite">
+                  <div className="flex justify-between gap-3"><span>Livraison</span><strong>{reservedTotals.shippingFee === null ? 'Vérification…' : formatPrice(reservedTotals.shippingFee)}</strong></div>
+                  <div className="flex justify-between gap-3 border-t border-[#e0e3e8] pt-3 text-lg"><span>Total à payer</span><strong>{reservedTotals.total === null ? '—' : formatPrice(reservedTotals.total)}</strong></div>
+                  <p className="text-xs leading-5 text-[#72767f]">
+                    Votre commande est en attente de paiement.
+                    {reservedUntil ? ` Vos articles sont réservés jusqu’à ${reservedUntil}.` : ''}
+                  </p>
+                </div>
+                {orderError && (
+                  <p role="alert" className="mt-4 rounded-xl bg-[#fff1f0] p-3 text-xs leading-5 text-[#ae302a]">
+                    {orderError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  disabled={reservationBusy}
+                  onClick={() => void resumeCheckout()}
+                  className="mt-5 flex w-full items-center justify-between rounded-full bg-[#235bfa] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1645cf] disabled:cursor-default disabled:opacity-45"
+                >
+                  {isResumingCheckout ? 'Ouverture du paiement…' : 'Reprendre le paiement'}
+                  {isResumingCheckout ? <LoaderCircle size={17} className="animate-spin" /> : <ArrowRight size={15} />}
+                </button>
+                <button
+                  type="button"
+                  disabled={reservationBusy}
+                  onClick={() => void cancelCurrentCheckout()}
+                  className="mt-3 w-full rounded-full border border-[#dfe3e8] bg-white px-6 py-4 text-sm font-semibold text-[#17191d] transition hover:bg-[#f4f5f7] disabled:opacity-45"
+                >
+                  {isCancellingCheckout ? 'Annulation en cours…' : 'Annuler la réservation'}
+                </button>
+                <p className="mt-3 text-center text-[11px] leading-5 text-[#8b9098]">
+                  L’annulation remet les articles en vente et vide votre panier. Mode test : aucun débit réel.
+                </p>
+              </>
+            ) : (
+            <>
 
             <fieldset
               disabled={isSubmitting}
@@ -354,16 +406,6 @@ export default function CartDialog() {
                 {orderError}
               </p>
             )}
-            {hasCheckoutAttempt && (
-              <p className="mt-3 text-xs leading-5 text-[#72767f]">
-                Une tentative existe déjà. Réessayez avec les mêmes coordonnées
-                et quantités pour la reprendre, ou{' '}
-                <a href="/paiement?retour=1" className="underline">
-                  vérifiez votre réservation
-                </a>
-                .
-              </p>
-            )}
             <button
               type="submit"
               disabled={!canSubmit}
@@ -377,8 +419,8 @@ export default function CartDialog() {
               )}
             </button>
             <p className="mt-3 text-center text-[11px] leading-5 text-[#8b9098]">
-              Paiement Stripe en mode test : aucun débit réel. Articles réservés
-              environ 30 minutes.
+              Paiement sécurisé par carte · mode test, aucun débit réel. Articles
+              réservés environ 30 minutes.
             </p>
             <button
               type="button"
@@ -388,6 +430,8 @@ export default function CartDialog() {
             >
               Continuer mes achats
             </button>
+            </>
+            )}
           </form>
         ) : (
           <div className="mt-6 space-y-3 text-sm text-[#72767f]">

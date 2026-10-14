@@ -16,11 +16,17 @@ import {
   ShopApiError,
   type ApiProduct,
   type CustomerDetails,
+  type ReservationState,
 } from '@/lib/shop-api';
 import { checkoutAttempt } from '@/lib/checkout-attempt';
 import { changeCartLine, countUnits, getMultiCartPrice, type CartLine } from '@/lib/multi-cart';
 import { parseCartDraft } from '@/lib/cart-draft';
-import { clearFinalizedCheckout } from '@/lib/checkout-storage';
+import {
+  clearFinalizedCheckout,
+  isDefinitiveCheckoutRefusal,
+  readCheckoutKey,
+  releaseCheckoutKeepCart,
+} from '@/lib/checkout-storage';
 import { getMaxCartCount } from '@/lib/shop-pricing';
 
 type ShopContextValue = {
@@ -51,6 +57,10 @@ type ShopContextValue = {
   dismissCartNotice: () => void;
   isCancellingCheckout: boolean;
   cancelCurrentCheckout: () => Promise<void>;
+  /** Server amounts of the pending order, once checked. */
+  reservation: ReservationState | null;
+  isResumingCheckout: boolean;
+  resumeCheckout: () => Promise<void>;
   dialogRef: RefObject<HTMLDialogElement | null>;
   cartOpenVersion: number;
   selectOffer: (id: OfferId) => void;
@@ -80,6 +90,8 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   const [cartHydrated, setCartHydrated] = useState(false);
   const [cartNotice, setCartNotice] = useState('');
   const [isCancellingCheckout, setIsCancellingCheckout] = useState(false);
+  const [reservation, setReservation] = useState<ReservationState | null>(null);
+  const [isResumingCheckout, setIsResumingCheckout] = useState(false);
   const [cartOpenVersion, setCartOpenVersion] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const submissionRef = useRef(false);
@@ -154,29 +166,53 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timeout);
   }, [cartNotice]);
 
-  // A paid or expired Stripe session must not keep the local basket locked.
-  useEffect(() => {
-    if (!hasCheckoutAttempt) return;
-    let sessionId = '';
-    try {
-      const session = JSON.parse(sessionStorage.getItem('connectaCheckoutSession') ?? 'null') as
-        { sessionId?: string } | null;
-      sessionId = session?.sessionId ?? '';
-    } catch { /* Payment return will handle invalid stored sessions. */ }
-    if (!/^cs_test_[a-zA-Z0-9]+$/.test(sessionId)) return;
-    let active = true;
-    void shopApi.checkoutStatus(sessionId).then(result => {
-      if (!active || result.paymentStatus === 'UNPAID') return;
-      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus)) return;
-      setHasCheckoutAttempt(false);
+  // Apply the server state of the pending order. Never unlocks on uncertainty.
+  const applyReservation = useCallback((result: ReservationState) => {
+    if (result.paymentStatus === 'UNPAID') {
+      setReservation(result);
+      return;
+    }
+    setReservation(null);
+    setHasCheckoutAttempt(false);
+    setRequestedOffer(null);
+    if (result.paymentStatus === 'PAID') {
+      clearFinalizedCheckout(sessionStorage, 'PAID');
       setCartItems([]);
-      setCartNotice('');
-      void refreshProduct();
-    }).catch(() => {
-      /* Never discard an unknown payment reservation on a network error. */
-    });
-    return () => { active = false; };
-  }, [hasCheckoutAttempt, refreshProduct]);
+      setCartNotice('Votre paiement est confirmé. Merci pour votre commande.');
+    } else {
+      // Stock is back on sale: keep the articles as an ordinary basket.
+      releaseCheckoutKeepCart(sessionStorage);
+      setCartNotice('Votre réservation a expiré. Vos articles sont toujours dans le panier.');
+    }
+    void refreshProduct();
+  }, [refreshProduct]);
+
+  // The key exists but no order was ever created for it: unlock, keep the basket.
+  const forgetMissingReservation = useCallback(() => {
+    releaseCheckoutKeepCart(sessionStorage);
+    setReservation(null);
+    setHasCheckoutAttempt(false);
+    void refreshProduct();
+  }, [refreshProduct]);
+
+  const syncReservation = useCallback(async () => {
+    // While the first checkout request is in flight, its order may not exist yet.
+    if (submissionRef.current) return;
+    const key = readCheckoutKey(sessionStorage);
+    if (!key) return;
+    try {
+      const result = await shopApi.reservationStatus(key);
+      if (!submissionRef.current) applyReservation(result);
+    } catch (error) {
+      if (error instanceof ShopApiError && error.status === 404 && !submissionRef.current)
+        forgetMissingReservation();
+      /* Otherwise never discard a possibly reserved basket on a network error. */
+    }
+  }, [applyReservation, forgetMissingReservation]);
+
+  useEffect(() => {
+    if (hasCheckoutAttempt) void syncReservation();
+  }, [hasCheckoutAttempt, syncReservation]);
 
   const soloPrice = product?.price ?? OFFERS.solo.price * 100;
   const duoPrice = product ? product.duoPrice : OFFERS.duo.price * 100;
@@ -225,7 +261,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
 
   function order(id: OfferId = selectedOffer) {
     if (submissionRef.current || hasCheckoutAttempt) {
-      if (hasCheckoutAttempt) setOrderError('Une réservation Stripe existe déjà. Annulez-la pour continuer vos achats.');
+      if (hasCheckoutAttempt) setOrderError('Votre commande est en attente de paiement. Reprenez le paiement ou annulez la réservation pour modifier votre panier.');
       openDialog();
       return;
     }
@@ -249,7 +285,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
 
   function addProduct(productId: number) {
     if (submissionRef.current || hasCheckoutAttempt) {
-      if (hasCheckoutAttempt) setOrderError('Une réservation Stripe existe déjà. Annulez-la pour continuer vos achats.');
+      if (hasCheckoutAttempt) setOrderError('Votre commande est en attente de paiement. Reprenez le paiement ou annulez la réservation pour modifier votre panier.');
       openDialog();
       return;
     }
@@ -294,7 +330,9 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
 
   function openCart() {
     openDialog();
-    if (!submissionRef.current) void refreshProduct();
+    if (submissionRef.current) return;
+    void refreshProduct();
+    if (hasCheckoutAttempt) void syncReservation();
   }
 
   function closeCart() {
@@ -304,41 +342,80 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
   }
 
   async function cancelCurrentCheckout() {
-    if (!hasCheckoutAttempt || submissionRef.current || isCancellingCheckout) return;
-    let sessionId = '';
-    try {
-      const saved = JSON.parse(sessionStorage.getItem('connectaCheckoutSession') ?? 'null') as
-        { sessionId?: string } | null;
-      sessionId = saved?.sessionId ?? '';
-    } catch { /* No valid checkout session was saved. */ }
-    if (!/^cs_test_[a-zA-Z0-9]+$/.test(sessionId)) {
-      setOrderError('Impossible de retrouver la session Stripe. Vérifiez la page paiement ou attendez l’expiration de la réservation.');
+    if (!hasCheckoutAttempt || submissionRef.current || isCancellingCheckout || isResumingCheckout) return;
+    const key = readCheckoutKey(sessionStorage);
+    if (!key) {
+      setOrderError('Commande en attente introuvable dans ce navigateur. Elle sera annulée automatiquement à son expiration.');
       return;
     }
     setIsCancellingCheckout(true);
     setOrderError(null);
     try {
-      const result = await shopApi.cancelCheckout(sessionId);
+      const result = await shopApi.cancelReservation(key);
       if (result.paymentStatus === 'UNPAID')
-        throw new Error('La réservation reste active. Réessayez ou vérifiez le paiement.');
-      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus))
-        throw new Error('La réservation reste active. Vérifiez son statut.');
+        throw new Error('La réservation est toujours active. Réessayez dans un instant.');
+      clearFinalizedCheckout(sessionStorage, result.paymentStatus);
+      setReservation(null);
       setHasCheckoutAttempt(false);
       setCartItems([]);
       setRequestedOffer(null);
-      setOrderError(null);
       setCartNotice(result.paymentStatus === 'PAID'
-        ? 'Le paiement est confirmé. Le panier a été vidé.'
-        : 'Commande annulée. Votre panier est maintenant vide.');
+        ? 'Votre paiement est confirmé. Le panier a été vidé.'
+        : 'Réservation annulée. Votre panier est maintenant vide.');
       await refreshProduct();
     } catch (error) {
+      if (error instanceof ShopApiError && error.status === 404) {
+        forgetMissingReservation();
+        return;
+      }
       setOrderError(error instanceof Error ? error.message : 'Impossible d’annuler la réservation.');
     } finally {
       setIsCancellingCheckout(false);
     }
   }
 
+  /** Reopen the payment page of the existing order: no new reservation, no form. */
+  async function resumeCheckout() {
+    if (!hasCheckoutAttempt || submissionRef.current || isCancellingCheckout || isResumingCheckout) return;
+    const key = readCheckoutKey(sessionStorage);
+    if (!key) {
+      setOrderError('Commande en attente introuvable dans ce navigateur. Elle sera annulée automatiquement à son expiration.');
+      return;
+    }
+    setIsResumingCheckout(true);
+    setOrderError(null);
+    try {
+      const result = await shopApi.resumeReservation(key);
+      if (result.paymentStatus === 'UNPAID' && result.url && result.sessionId) {
+        sessionStorage.setItem('connectaCheckoutSession', JSON.stringify({
+          sessionId: result.sessionId,
+          url: result.url,
+          expiresAt: result.expiresAt,
+          total: result.total,
+          shippingFee: result.shippingFee,
+          testMode: true,
+        }));
+        window.location.assign(result.url);
+        return;
+      }
+      if (result.paymentStatus === 'UNPAID')
+        throw new Error('Votre paiement est en cours de confirmation. Réessayez dans quelques instants.');
+      applyReservation(result);
+    } catch (error) {
+      if (error instanceof ShopApiError && error.status === 404) {
+        forgetMissingReservation();
+        setOrderError('Commande en attente introuvable. Vos articles sont toujours dans le panier.');
+        return;
+      }
+      setOrderError(error instanceof Error ? error.message : 'Impossible de reprendre le paiement.');
+    } finally {
+      setIsResumingCheckout(false);
+    }
+  }
+
   async function submitOrder(customer: CustomerDetails, memberCheckout: boolean) {
+    // A pending order is resumed, never submitted again.
+    if (hasCheckoutAttempt) return;
     if (submissionRef.current || !cartItems.length || catalogLoading || catalogError) return;
     if (!hasCheckoutAttempt && !getMultiCartPrice(catalog, cartItems).valid) {
       setOrderError('Stock insuffisant ou panier modifié. Actualisez le panier.');
@@ -379,15 +456,20 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       window.location.assign(result.url);
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : 'Impossible de confirmer votre commande.');
-      if (error instanceof ShopApiError && (error.status === 409 || error.status === 404)) {
+      // A refused request created no reservation: unlock the basket.
+      // Network errors and 5xx stay pending; the cart then offers resume/cancel.
+      if (error instanceof ShopApiError && isDefinitiveCheckoutRefusal(error.status)) {
         sessionStorage.removeItem('connectaCheckoutAttempt');
         setHasCheckoutAttempt(false);
+        setReservation(null);
         await refreshProduct();
       }
     } finally {
       submissionRef.current = false;
       setIsSubmitting(false);
     }
+    // Uncertain outcome (network or server error): load the pending amounts.
+    if (readCheckoutKey(sessionStorage)) void syncReservation();
   }
 
   function updateCartQuantity(change: number) {
@@ -424,6 +506,9 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
         dismissCartNotice: () => setCartNotice(''),
         isCancellingCheckout,
         cancelCurrentCheckout,
+        reservation,
+        isResumingCheckout,
+        resumeCheckout,
         dialogRef,
         cartOpenVersion,
         selectOffer,

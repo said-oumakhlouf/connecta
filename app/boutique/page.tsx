@@ -39,10 +39,13 @@ export default function CatalogPage() {
         )}
         {hasCheckoutAttempt && (
           <div role="status" className="mb-6 rounded-2xl border border-[#f1d2aa] bg-[#fff8ee] p-5 text-sm text-[#835424]">
-            Vous avez une réservation Stripe en cours. Pour ajouter d'autres produits,
-            ouvrez le panier pour l’annuler. Cela libérera le stock et videra votre panier.
-            <button type="button" onClick={openCart} className="ml-2 font-semibold underline">
-              Gérer la réservation
+            <p className="font-semibold">Votre commande est en attente de paiement.</p>
+            <p className="mt-1">
+              Vos articles sont réservés quelques minutes. Finalisez le paiement, ou annulez la
+              commande pour modifier votre panier.
+            </p>
+            <button type="button" onClick={openCart} className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#235bfa] px-5 py-2.5 text-xs font-semibold text-white">
+              Finaliser ma commande <ArrowRight size={14} />
             </button>
           </div>
         )}

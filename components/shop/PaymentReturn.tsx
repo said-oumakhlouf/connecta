@@ -126,12 +126,12 @@ export default function PaymentReturn() {
         </h1>
         <p className="mt-4 text-sm leading-6 text-[#72767f]">
           {paid
-            ? "Stripe a confirmé le paiement de test. Votre commande est enregistrée ; aucun argent réel n’a été débité."
+            ? "Votre paiement de test est confirmé. Votre commande est enregistrée ; aucun argent réel n’a été débité."
             : expired
               ? "Les articles ont été remis à disposition. Vous pouvez revenir à la boutique."
               : params.get("retour") === "1"
                 ? "Vous avez quitté le paiement. Reprenez-le ou annulez la réservation pour libérer les articles."
-                : "Nous vérifions la confirmation auprès de Stripe. Le retour sur cette page ne suffit pas à valider un paiement."}
+                : "Nous vérifions la confirmation de votre paiement. Cette page se met à jour automatiquement."}
         </p>
         {data && (
           <dl className="mt-7 space-y-4 rounded-2xl bg-[#f7f8fa] p-5 text-left text-sm">

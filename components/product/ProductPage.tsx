@@ -42,7 +42,7 @@ const REASSURANCE: { Icon: LucideIcon; title: string; text: string }[] = [
   {
     Icon: CreditCard,
     title: 'Paiement sécurisé',
-    text: 'Règlement par carte via Stripe.',
+    text: 'Règlement sécurisé par carte bancaire.',
   },
   {
     Icon: Truck,
