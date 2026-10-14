@@ -57,7 +57,7 @@ export default function CartDialog() {
         ? current : { ...current, country: options.destinations[0].country, postalCode: '', region: options.destinations[0].country === 'CA' ? 'QC' : '' });
     }).catch(() => { if (active) setShippingError('Impossible de charger les frais de livraison.'); });
     return () => { active = false; };
-  }, [shippingRefresh]);
+  }, [shippingRefresh, cartOpenVersion]);
   useEffect(() => {
     if (cartOpenVersion === 0) return;
     let active = true;
@@ -181,7 +181,7 @@ export default function CartDialog() {
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
                       <span className="text-xs text-[#72767f]">
-                        {item && availability ? `${availability.outsideCart} hors panier · ${line.quantity} ${hasCheckoutAttempt ? 'réservé(s)' : 'dans le panier'}` : 'Produit introuvable'}
+                        {item && availability ? `${line.quantity} ${hasCheckoutAttempt ? (line.quantity > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · ${availability.outsideCart} encore disponible${availability.outsideCart > 1 ? 's' : ''}` : 'Produit introuvable'}
                       </span>
                       <div className="flex items-center gap-3">
                         <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
@@ -339,10 +339,11 @@ export default function CartDialog() {
               <div className="flex justify-between gap-3"><span>Livraison</span><strong>{shippingFee === undefined ? 'Indisponible' : formatPrice(shippingFee)}</strong></div>
               <div className="flex justify-between gap-3 border-t border-[#e0e3e8] pt-3 text-lg"><span>Total à payer</span><strong>{shippingFee === undefined ? '—' : formatPrice(cartTotal + shippingFee)}</strong></div>
               <p className="text-xs text-[#72767f]">Montants en euros, livraison incluse.</p>
-              {shippingOptions?.provisional && <p className="text-xs text-[#72767f]">Tarifs de livraison provisoires pour les essais.</p>}
               {shippingError && <p role="alert" className="text-[#ae302a]">{shippingError}</p>}
               {shippingOptions?.destinations.length === 0 && <p>Aucune destination disponible pour le moment.</p>}
-              <button type="button" disabled={isSubmitting} className="text-xs underline" onClick={() => setShippingRefresh(v => v + 1)}>Actualiser les frais de livraison</button>
+              {(shippingError || (shippingOptions !== null && shippingOptions.destinations.length === 0) || orderError?.includes('tarif de livraison')) && (
+                <button type="button" disabled={isSubmitting} className="text-xs underline" onClick={() => setShippingRefresh(v => v + 1)}>Recalculer les frais de livraison</button>
+              )}
             </div>
 
             {orderError && (
