@@ -66,3 +66,16 @@ export function getMultiCartPrice(products: ApiProduct[], items: CartLine[], res
     count: countUnits(items),
   };
 }
+
+/** Amounts shown for a reserved basket. Articles keep the locked-line subtotal
+ * (never re-checked against stock already deducted); shipping and the amount to
+ * pay come from the server reservation, never from a hidden address form.
+ */
+export function getReservedTotals(
+  itemsTotal: number,
+  reservation: { total: number; shippingFee: number } | null,
+) {
+  return reservation
+    ? { itemsTotal, shippingFee: reservation.shippingFee, total: reservation.total }
+    : { itemsTotal, shippingFee: null, total: null };
+}
