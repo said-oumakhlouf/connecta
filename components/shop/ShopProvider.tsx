@@ -195,7 +195,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     count: Math.ceil(hocoInCart.quantity / offers[selectedOffer].quantity),
   } : null;
   const cartOffer = cart ? offers[cart.id] : null;
-  const priced = getMultiCartPrice(catalog, cartItems);
+  const priced = getMultiCartPrice(catalog, cartItems, hasCheckoutAttempt);
   const cartCount = priced.count;
   const cartTotal = priced.total;
   const cartDiscount = priced.discount;
