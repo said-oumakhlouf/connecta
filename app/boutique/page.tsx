@@ -73,17 +73,11 @@ export default function CatalogPage() {
                     {soldOut ? (
                       <p>Épuisé</p>
                     ) : availability.inCart ? (
-                      <>
-                        <p className="font-medium text-[#235bfa]">
-                          {availability.outsideCart} restant(s) hors panier
-                        </p>
-                        <p>
-                          {availability.inCart} {hasCheckoutAttempt ? 'réservé(s)' : 'dans votre panier'}
-                          {!hasCheckoutAttempt && ` · ${item.stock} en stock`}
-                        </p>
-                      </>
+                      <p className="font-medium text-[#235bfa]">
+                        {availability.inCart} {hasCheckoutAttempt ? (availability.inCart > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · {availability.outsideCart} encore disponible{availability.outsideCart > 1 ? 's' : ''}
+                      </p>
                     ) : (
-                      <p>{item.stock} disponible(s)</p>
+                      <p>{item.stock} disponible{item.stock > 1 ? 's' : ''}</p>
                     )}
                   </div>
                   <div className="mt-auto flex items-end justify-between gap-3 pt-7">
