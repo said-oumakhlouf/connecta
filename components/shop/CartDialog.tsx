@@ -94,7 +94,7 @@ export default function CartDialog() {
   }, [cartOpenVersion, accountRetry]);
 
   const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
-  const priced = getMultiCartPrice(catalog, cartItems);
+  const priced = getMultiCartPrice(catalog, cartItems, hasCheckoutAttempt);
   const canSubmit =
     shippingFee !== undefined &&
     cartItems.length > 0 &&
