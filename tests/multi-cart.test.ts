@@ -44,6 +44,42 @@ test('mixed carts compute server-equivalent per-reference Duo discounts and limi
   assert.equal(getMultiCartPrice(products, lines).total, 7990);
 });
 
+test('already-reserved stock never hides the paid basket total', () => {
+  const hoco = products[0];
+  const reservedLines = [{ productId: hoco.id, quantity: 6 }];
+  const currentCatalog = [{ ...hoco, stock: 4 }];
+  // Six items have been reserved from an initial stock of ten.
+  assert.deepEqual(getMultiCartPrice(currentCatalog, reservedLines), {
+    count: 6, total: 0, discount: 0, valid: false,
+  });
+  assert.deepEqual(getMultiCartPrice(currentCatalog, reservedLines, true), {
+    count: 6, total: 18000, discount: 3000, valid: true,
+  });
+
+  const allReserved = [{ ...hoco, stock: 0 }];
+  assert.deepEqual(getMultiCartPrice(allReserved, [{ productId: hoco.id, quantity: 20 }], true), {
+    count: 20, total: 60000, discount: 10000, valid: true,
+  });
+  // Before Stripe reserves stock, overselling remains forbidden.
+  assert.equal(getMultiCartPrice(allReserved, [{ productId: hoco.id, quantity: 20 }]).valid, false);
+});
+
+test('multiple reserved references keep every line in the displayed total', () => {
+  const selected = [
+    { productId: 1, quantity: 6 },
+    { productId: 2, quantity: 8 },
+    { productId: 3, quantity: 9 },
+  ];
+  const afterReservation = products.map(product => ({
+    ...product,
+    stock: product.id === 1 ? 4 : product.id === 2 ? 12 : 6,
+  }));
+  assert.deepEqual(getMultiCartPrice(afterReservation, selected, true), {
+    count: 23, total: 43830, discount: 3000, valid: true,
+  });
+  assert.equal(getMultiCartPrice(afterReservation, selected).valid, false);
+});
+
 test('multi-line checkout posts identifiers and quantities only, in guest and member modes', async () => {
   for (const member of [false, true]) {
     const api = createShopApi('http://api.test', async (url, options) => {
