@@ -39,7 +39,10 @@ export function getCartStockAvailability(
   return { inCart, outsideCart, canAdd };
 }
 
-export function getMultiCartPrice(products: ApiProduct[], items: CartLine[]) {
+/** Once checkout has reserved stock, API stock excludes the reserved units.
+ * Keep pricing the locked basket while retaining strict stock checks for fresh carts.
+ */
+export function getMultiCartPrice(products: ApiProduct[], items: CartLine[], reserved = false) {
   const byId = new Map(products.map(product => [product.id, product]));
   let total = 0;
   let discount = 0;
@@ -49,7 +52,7 @@ export function getMultiCartPrice(products: ApiProduct[], items: CartLine[]) {
       const product = byId.get(productId);
       if (!product || !product.active || quantity < 1 ||
         !Number.isSafeInteger(quantity) || quantity > 2_147_483_647 ||
-        quantity > product.stock) return false;
+        (!reserved && quantity > product.stock)) return false;
       const priced = getCartPrice(product.price, product.duoPrice, quantity);
       total += priced.total;
       discount += priced.discount;
