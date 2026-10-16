@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { orderStorefrontProducts } from '../lib/catalog-display';
+import { getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
 
 test('lead product appears before complementary accessories', () => {
   const original = [
@@ -17,4 +17,15 @@ test('other products retain relative order and catalogue is never mutated', () =
   const original = [{ slug: 'autre-2' }, { slug: 'autre-1' }];
   assert.deepEqual(orderStorefrontProducts(original), original);
   assert.notEqual(orderStorefrontProducts(original), original);
+});
+
+test('storefront presentation is keyed by slug and never carries prices', () => {
+  assert.match(getProductVisual('hoco-ew75').src, /\.webp$/);
+  assert.match(getProductVisual('connecta-cable-test').alt, /illustration/i);
+  assert.match(getProductVisual('connecta-chargeur-test').src, /chargeur/);
+  assert.equal(getProductCategory('connecta-cable-test'), 'Câble de charge');
+  assert.equal(getProductHref('hoco-ew75'), '/produit/hoco-ew75');
+  assert.equal(getProductHref('connecta-cable-test'), null);
+  for (const slug of ['hoco-ew75', 'connecta-cable-test', 'autre'])
+    assert.ok(!('price' in getProductVisual(slug)));
 });

@@ -1,16 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { displayProductName } from '@/lib/product-display';
 import { orderStorefrontProducts } from '@/lib/catalog-display';
 import Container from '@/components/layout/Container';
+import ProductCard, { ProductCardSkeleton } from '@/components/shop/ProductCard';
 import { useShop } from '@/components/shop/ShopProvider';
-import { formatPrice } from '@/lib/shop-pricing';
-import { getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CatalogPage() {
-  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
+  const { catalog, catalogLoading, catalogError, openCart, hasCheckoutAttempt, refreshProduct } = useShop();
 
   const featuredCatalog = orderStorefrontProducts(catalog);
 
@@ -19,16 +16,17 @@ export default function CatalogPage() {
       <Container className="pt-10 pb-16 md:pt-16 md:pb-20">
         <div className="mb-10 max-w-180 md:mb-12">
           <div className="max-w-170">
-            <span className="text-[10px] font-bold uppercase tracking-[2px] text-[#235bfa]">LA SÉLECTION CONNECTA</span>
-            <h1 className="mt-4 text-[40px] font-semibold leading-[1.05] tracking-[-2px] md:text-[64px]">
-              Votre quotidien. <span className="text-[#235bfa]">Connecté.</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[1.6px] text-brand">La boutique CONNECTA</span>
+            <h1 className="mt-4 text-[36px] font-semibold leading-[1.05] tracking-[-1.6px] md:text-[52px] md:tracking-[-2.4px]">
+              Tous nos accessoires
             </h1>
-            <p className="mt-5 max-w-130 text-sm leading-7 text-[#747982]">
-              Des accessoires technologiques simples, utiles et sélectionnés pour vous accompagner au quotidien.
+            <p className="mt-4 max-w-130 text-[15px] leading-7 text-muted">
+              Écouteurs sans fil, câbles et chargeurs. Les frais de livraison sont affichés dans le
+              panier, avant le paiement.
             </p>
           </div>
         </div>
-        {catalogLoading && <p role="status" className="text-sm text-[#747982]">Chargement des produits et des stocks…</p>}
+        {catalogLoading && <p role="status" className="sr-only">Chargement des produits et des stocks…</p>}
         {catalogError && (
           <div role="alert" className="rounded-xl border border-[#f0c4c4] bg-white p-6 text-sm text-[#a43535]">
             {catalogError}
@@ -51,55 +49,13 @@ export default function CatalogPage() {
           </div>
         )}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredCatalog.map(item => {
-            const isHoco = item.slug === 'hoco-ew75';
-            const isCable = item.slug.includes('cable');
-            const availability = getCartStockAvailability(item, cartItems, hasCheckoutAttempt);
-            const soldOut = !item.active || (item.stock < 1 && availability.inCart === 0);
-            return (
-              <article key={item.id} className="group flex overflow-hidden flex-col rounded-[24px] border border-[#e4e7ec] bg-white shadow-[0_10px_35px_#17203306] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_#17203316]">
-                <div className="relative grid aspect-[5/4] place-items-center overflow-hidden bg-[#f0f3f8]">
-                  {isHoco ? (
-                    <Image src="/images/hoco-ew75-features-800.webp" alt="Écouteurs Hoco EW75" width={800} height={600} className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.025]" />
-                  ) : (
-                    <Image
-                      src={isCable ? '/images/connecta-cable-demo.webp' : '/images/connecta-chargeur-demo.webp'}
-                      alt={isCable ? 'Visuel illustratif d’un câble USB-A vers USB-C blanc' : 'Visuel illustratif d’un chargeur USB-C blanc'}
-                      width={420} height={420}
-                      className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.025] sm:p-4"
-                    />
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <p className="text-[10px] font-bold tracking-[1.6px] text-[#90959e]">{isHoco ? 'ÉCOUTEURS SANS FIL' : 'ACCESSOIRES CONNECTA'}</p>
-                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.6px]">{displayProductName(item.name)}</h2>
-                  {isHoco && item.duoPrice != null && item.duoPrice < item.price * 2 && (
-                    <p className="mt-2 text-xs font-semibold text-[#235bfa]">Offre Duo · 2 pour {formatPrice(item.duoPrice)} · Économisez {formatPrice(item.price * 2 - item.duoPrice)}</p>
-                  )}
-                  <div className="mt-2 space-y-1 text-xs text-[#72767f]" aria-live="polite">
-                    {soldOut ? (
-                      <p>Épuisé</p>
-                    ) : availability.inCart ? (
-                      <p className="font-medium text-[#235bfa]">
-                        {availability.inCart} {hasCheckoutAttempt ? (availability.inCart > 1 ? 'réservés' : 'réservé') : 'dans votre panier'}
-                      </p>
-                    ) : (
-                      <p>Disponible</p>
-                    )}
-                  </div>
-                  <div className="mt-auto flex items-end justify-between gap-3 pt-7">
-                    <strong className="text-2xl tracking-[-0.8px]">{formatPrice(item.price)}</strong>
-                    <button type="button" disabled={isSubmitting || !availability.canAdd}
-                      onClick={() => addProduct(item.id)}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#235bfa] px-5 py-3 text-xs font-semibold text-white transition hover:bg-[#1748cb] disabled:cursor-not-allowed disabled:bg-[#b5bdca]">
-                      Ajouter <ArrowRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+          {catalogLoading && catalog.length === 0
+            ? [0, 1, 2].map(index => <ProductCardSkeleton key={index} />)
+            : featuredCatalog.map(item => <ProductCard key={item.id} item={item} />)}
         </div>
+        {catalog.length > 0 && (
+          <p className="mt-6 text-xs text-muted">Visuels d’illustration non contractuels.</p>
+        )}
       </Container>
     </main>
   );

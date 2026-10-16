@@ -7,12 +7,12 @@ import ShippingFields from './ShippingFields';
 import { shopApi } from '@/lib/shop-api';
 import { memberApi, MemberApiError, type MemberProfile } from '@/lib/member-api';
 import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
-import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
 import { getMultiCartPrice, getCartStockAvailability, getReservedTotals } from '@/lib/multi-cart';
 import { displayProductName } from '@/lib/product-display';
+import { getProductVisual } from '@/lib/catalog-display';
 
 export default function CartDialog() {
   const {
@@ -24,7 +24,6 @@ export default function CartDialog() {
     cartCount,
     cartTotal,
     cartDiscount,
-    product,
     orderError,
     isSubmitting,
     hasCheckoutAttempt,
@@ -168,21 +167,16 @@ export default function CartDialog() {
             <div className="mt-6 space-y-3">
               {cartItems.map((line) => {
                 const item = catalog.find(p => p.id === line.productId);
-                const isHoco = item?.id === product?.id;
                 const lineAmount = item ? getCartPrice(item.price, item.duoPrice, line.quantity).total : 0;
                 const availability = item ? getCartStockAvailability(item, cartItems, hasCheckoutAttempt) : null;
                 return (
                   <div key={line.productId} className="rounded-2xl bg-[#f7f8fa] p-3 sm:p-4">
                     <div className="flex items-center gap-3">
                       <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-white text-[#235bfa]">
-                        {isHoco ? (
-                          <div className="h-75 w-80 origin-top-left scale-[0.2]">
-                            <ProductVisual variant="case" />
-                          </div>
-                        ) : (
-                           <Image src={item?.slug.includes('cable') ? '/images/connecta-cable-demo.webp' : '/images/connecta-chargeur-demo.webp'}
-                             alt="" width={80} height={80} className="h-full w-full object-contain" />
-                         )}
+                        {item ? (
+                          <Image src={getProductVisual(item.slug).src} alt="" width={80} height={80}
+                            className={`h-full w-full object-contain ${getProductVisual(item.slug).padded ? 'p-1' : ''}`} />
+                        ) : null}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-semibold">{item ? displayProductName(item.name) : 'Produit indisponible'}</h3>
