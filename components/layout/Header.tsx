@@ -5,26 +5,13 @@ import { useState } from 'react';
 
 import Container from '@/components/layout/Container';
 import Logo from '@/components/layout/Logo';
-import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 
 const NAVIGATION = [
-  {
-    label: 'La boutique',
-    href: '/boutique',
-  },
-  {
-    label: 'Le produit',
-    href: '/#produit',
-  },
-  {
-    label: <>Pourquoi <BrandName /> ?</>,
-    href: '/#brand',
-  },
-  {
-    label: 'Questions fréquentes',
-    href: '/#faq',
-  },
+  { label: 'Boutique', href: '/boutique' },
+  { label: 'Hoco EW75', href: '/produit/hoco-ew75' },
+  { label: 'Offre Duo', href: '/#offres' },
+  { label: 'Aide', href: '/#faq' },
 ] as const;
 
 export default function Header() {
@@ -37,14 +24,14 @@ export default function Header() {
         <Logo />
 
         <nav
-          className="mx-auto hidden items-center gap-9 text-xs text-[#656a72] lg:flex"
+          className="mx-auto hidden items-center gap-8 text-[13px] font-medium text-muted lg:flex"
           aria-label="Navigation principale"
         >
           {NAVIGATION.map(({ href, label }) => (
             <a
               key={href}
               href={href}
-              className="transition-colors hover:text-[#17191d]"
+              className="transition-colors hover:text-ink"
             >
               {label}
             </a>
@@ -64,7 +51,7 @@ export default function Header() {
             <ShoppingBag size={19} strokeWidth={1.7} />
 
             {cartCount > 0 && (
-              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#235bfa] px-1 text-[8px] font-bold leading-none text-white">
+              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#235bfa] px-1 text-[10px] font-bold leading-none text-white">
                 {cartCount}
               </span>
             )}
@@ -74,7 +61,7 @@ export default function Header() {
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
             className="grid size-9 place-items-center rounded-full bg-transparent transition hover:bg-[#f5f6f8] lg:hidden"
-            aria-label="Menu"
+            aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
           >
@@ -94,9 +81,9 @@ export default function Header() {
               key={href}
               href={href}
               onClick={() => setMenuOpen(false)}
-              className="border-b border-[#f0f1f3] py-4 text-[13px] text-[#565c65] last:border-b-0"
+              className="border-b border-[#f0f1f3] py-4 text-[15px] text-ink last:border-b-0"
             >
-              {label === 'Questions fréquentes' ? 'FAQ' : label}
+              {label}
             </a>
           ))}
         </nav>
