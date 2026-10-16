@@ -11,6 +11,7 @@ import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
 import { getMultiCartPrice, getCartStockAvailability, getReservedTotals } from '@/lib/multi-cart';
+import { displayProductName } from '@/lib/product-display';
 
 export default function CartDialog() {
   const {
@@ -180,7 +181,7 @@ export default function CartDialog() {
                         ) : item?.slug.includes('cable') ? <Cable size={25} /> : <Package size={25} />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold">{item?.name ?? 'Produit indisponible'}</h3>
+                        <h3 className="text-sm font-semibold">{item ? displayProductName(item.name) : 'Produit indisponible'}</h3>
                         <p className="mt-1 text-xs text-[#72767f]">
                           {item ? `${formatPrice(item.price)} l’unité` : 'Référence non disponible'}
                         </p>
@@ -227,7 +228,7 @@ export default function CartDialog() {
             {!reserved && <>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-[#72767f]">
-                {cartCount} article(s) dans votre panier · quantités limitées au stock disponible.
+                {cartCount} {cartCount === 1 ? 'article' : 'articles'} dans votre panier
               </p>
               {!hasCheckoutAttempt && (
                 <button type="button" disabled={isSubmitting || isCancellingCheckout}
@@ -237,9 +238,6 @@ export default function CartDialog() {
                 </button>
               )}
             </div>
-            <p className="mt-2 text-xs text-[#72767f]">
-              Vous pouvez continuer vos achats avant de payer.
-            </p>
             </>}
             {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
               <p role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">

@@ -1,6 +1,7 @@
 'use client';
 
 import DeliveryDetails from '@/components/orders/DeliveryDetails';
+import { displayProductName } from '@/lib/product-display';
 import { fulfillmentLabels, shortReference } from '@/lib/shipping';
 import {
   useCallback,
@@ -198,12 +199,12 @@ export default function MemberPanel() {
           VOTRE ESPACE CONNECTA
         </p>
         <h1 className="text-3xl font-semibold tracking-[-1px] sm:text-4xl">
-          {profile ? 'Mes commandes.' : 'Bienvenue chez vous.'}
+          {profile ? 'Mes commandes.' : 'Votre espace client.'}
         </h1>
         <p className="mt-3 text-sm leading-6 text-[#72767f]">
           {profile
             ? profile.email
-            : 'Retrouvez vos commandes et gérez vos réservations, sans mot de passe.'}
+            : 'Consultez vos commandes et leur livraison. Connexion sécurisée, sans mot de passe.'}
         </p>
         {error && (
           <p
@@ -348,10 +349,10 @@ export default function MemberPanel() {
                           {dateFormat.format(new Date(order.createdAt))}
                         </p>
                         <h2 className="mt-2 font-semibold">
-                          {order.items[0].productName}
+                          {displayProductName(order.items[0].productName)}
                         </h2>
                         <p className="mt-1 text-xs text-[#72767f]">
-                          Réservation n°{' '}
+                          {order.paymentStatus === 'PAID' ? 'Commande' : 'Réservation'} n°{' '}
                           {shortReference(order.id)}
                         </p>
                       </div>
@@ -384,12 +385,12 @@ export default function MemberPanel() {
                           className="mt-3 flex justify-between gap-3"
                         >
                           <span>
-                            {item.productName} × {item.quantity}
+                            {displayProductName(item.productName)} × {item.quantity}
                           </span>
                           <strong>{formatPrice(item.lineTotal)}</strong>
                         </div>
                       ))}
-                      <DeliveryDetails order={order} />
+                      <DeliveryDetails order={order} showFulfillment={false} />
                     </details>
                     {order.paymentStatus === 'UNPAID' && (
                       <div className="mt-5 border-t border-[#eff0f3] pt-4">

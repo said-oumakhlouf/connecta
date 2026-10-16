@@ -3,10 +3,7 @@ import { ArrowUpRight } from 'lucide-react';
 import Container from '@/components/layout/Container';
 import Logo from '@/components/layout/Logo';
 import BrandName from '@/components/layout/BrandName';
-import { PRODUCTS } from '@/data/products';
 import { SITE } from '@/data/site';
-
-const product = PRODUCTS.ew75;
 
 export default function Footer() {
   return (
@@ -22,10 +19,10 @@ export default function Footer() {
           </div>
 
           <a
-            href="/#produit"
+            href="/boutique"
             className="font-heading inline-flex items-center gap-2 text-[10px] font-semibold text-[#17191d] transition hover:opacity-60 md:text-xs"
           >
-            Découvrir les {product.name}
+            Découvrir la collection
             <ArrowUpRight size={15} />
           </a>
         </div>
@@ -34,9 +31,11 @@ export default function Footer() {
           <span>
             © {new Date().getFullYear()} <BrandName />
           </span>
-          <a href="/admin" className="transition hover:text-[#17191d]">
-            Administration
-          </a>
+          <nav aria-label="Liens utiles" className="flex items-center gap-4">
+            <a href="/boutique" className="transition hover:text-[#17191d]">Boutique</a>
+            <a href="/compte" className="transition hover:text-[#17191d]">Mes commandes</a>
+            <a href="/#faq" className="transition hover:text-[#17191d]">Questions fréquentes</a>
+          </nav>
         </div>
       </Container>
     </footer>

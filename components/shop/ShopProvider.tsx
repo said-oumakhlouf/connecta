@@ -28,6 +28,7 @@ import {
   releaseCheckoutKeepCart,
 } from '@/lib/checkout-storage';
 import { getMaxCartCount } from '@/lib/shop-pricing';
+import { displayProductName } from '@/lib/product-display';
 
 type ShopContextValue = {
   selectedOffer: OfferId;
@@ -245,7 +246,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
     const quantity = offers[requestedOffer].quantity;
     setCartItems(current => changeCartLine(current, product, quantity));
     setRequestedOffer(null);
-    setCartNotice(`${product.name} ajouté au panier`);
+    setCartNotice(`${displayProductName(product.name)} ajouté au panier`);
   }, [product, requestedOffer, hasCheckoutAttempt]);
 
   function selectOffer(id: OfferId) {
@@ -280,7 +281,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       return;
     }
     setCartItems(current => changeCartLine(current, product, desired));
-    setCartNotice(`${desired} × ${product.name} ajouté(s) au panier`);
+    setCartNotice(`${desired} × ${displayProductName(product.name)} ajouté(s) au panier`);
   }
 
   function addProduct(productId: number) {
@@ -301,7 +302,7 @@ export default function ShopProvider({ children }: { children: ReactNode }) {
       return;
     }
     setCartItems(current => changeCartLine(current, item, 1));
-    setCartNotice(`${item.name} ajouté au panier`);
+    setCartNotice(`${displayProductName(item.name)} ajouté au panier`);
     setOrderError(null);
     // Do not open the cart or Stripe here: the shopper may add more products.
   }

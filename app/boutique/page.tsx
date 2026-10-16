@@ -1,31 +1,33 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, Cable, Package, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Cable, Package, ShieldCheck } from 'lucide-react';
+import { displayProductName } from '@/lib/product-display';
 import Container from '@/components/layout/Container';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice } from '@/lib/shop-pricing';
 import { getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CatalogPage() {
-  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, cartCount, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
+  const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] pb-24 text-[#17191d] md:pb-18">
-      <Container className="py-10 md:py-20">
-        <div className="mb-10 flex flex-wrap items-end justify-between gap-6 md:mb-14">
+    <main className="min-h-screen bg-[#f7f8fa] pb-20 text-[#17191d]">
+      <Container className="pt-10 pb-16 md:pt-16 md:pb-20">
+        <div className="mb-10 max-w-180 md:mb-12">
           <div className="max-w-170">
-            <span className="text-[10px] font-bold uppercase tracking-[2px] text-[#235bfa]">CONNECTA / SHOP</span>
+            <span className="text-[10px] font-bold uppercase tracking-[2px] text-[#235bfa]">LA SÉLECTION CONNECTA</span>
             <h1 className="mt-4 text-[40px] font-semibold leading-[1.05] tracking-[-2px] md:text-[64px]">
               Votre quotidien. <span className="text-[#235bfa]">Connecté.</span>
             </h1>
             <p className="mt-5 max-w-130 text-sm leading-7 text-[#747982]">
-              Retrouvez nos produits et composez votre panier. Les références marquées TEST sont fictives et réservées aux essais.
+              Des accessoires technologiques simples, utiles et sélectionnés pour vous accompagner au quotidien.
+            </p>
+            <p className="mt-5 inline-flex items-start gap-2 text-xs leading-5 text-[#747982]">
+              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#235bfa]" aria-hidden="true" />
+              <span>Boutique de démonstration · Produits fictifs et paiements de test, sans débit réel.</span>
             </p>
           </div>
-          <button type="button" onClick={openCart} className="inline-flex items-center gap-3 rounded-full border border-[#d8dce2] bg-white px-5 py-3 text-sm font-semibold">
-            <ShoppingBag size={17} /> Panier ({cartCount})
-          </button>
         </div>
         {catalogLoading && <p role="status" className="text-sm text-[#747982]">Chargement des produits et des stocks…</p>}
         {catalogError && (
@@ -56,31 +58,34 @@ export default function CatalogPage() {
             const availability = getCartStockAvailability(item, cartItems, hasCheckoutAttempt);
             const soldOut = !item.active || (item.stock < 1 && availability.inCart === 0);
             return (
-              <article key={item.id} className="flex overflow-hidden flex-col rounded-[24px] border border-[#e4e7ec] bg-white">
+              <article key={item.id} className="group flex overflow-hidden flex-col rounded-[24px] border border-[#e4e7ec] bg-white shadow-[0_10px_35px_#17203306] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_#17203316]">
                 <div className="relative grid aspect-[5/4] place-items-center overflow-hidden bg-[#f0f3f8]">
                   {isHoco ? (
-                    <Image src="/images/hoco-ew75-features-800.webp" alt="Écouteurs Hoco EW75" width={800} height={600} className="h-full w-full object-contain" />
+                    <Image src="/images/hoco-ew75-features-800.webp" alt="Écouteurs Hoco EW75" width={800} height={600} className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.025]" />
                   ) : (
                     <div className="grid size-26 place-items-center rounded-[26px] bg-white text-[#235bfa] shadow-sm">
                       {isCable ? <Cable size={48} strokeWidth={1.2} /> : <Package size={48} strokeWidth={1.2} />}
                     </div>
                   )}
                   {item.slug.endsWith('-test') && (
-                    <span className="absolute left-5 top-5 rounded-full bg-[#17191d] px-3 py-1.5 text-[10px] font-bold tracking-wider text-white">PRODUIT FICTIF · TEST</span>
+                    <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-medium text-[#69717d]">Visuel de démonstration</span>
                   )}
                 </div>
                 <div className="flex flex-1 flex-col p-6">
-                  <p className="text-[10px] font-bold tracking-[1.6px] text-[#90959e]">ACCESSOIRES CONNECTA</p>
-                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.6px]">{item.name}</h2>
+                  <p className="text-[10px] font-bold tracking-[1.6px] text-[#90959e]">{isHoco ? 'ÉCOUTEURS SANS FIL' : 'ACCESSOIRES CONNECTA'}</p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.6px]">{displayProductName(item.name)}</h2>
+                  {isHoco && item.duoPrice != null && item.duoPrice < item.price * 2 && (
+                    <p className="mt-2 text-xs font-medium text-[#235bfa]">Offre Duo : 2 pour {formatPrice(item.duoPrice)}</p>
+                  )}
                   <div className="mt-2 space-y-1 text-xs text-[#72767f]" aria-live="polite">
                     {soldOut ? (
                       <p>Épuisé</p>
                     ) : availability.inCart ? (
                       <p className="font-medium text-[#235bfa]">
-                        {availability.inCart} {hasCheckoutAttempt ? (availability.inCart > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · {availability.outsideCart} encore disponible{availability.outsideCart > 1 ? 's' : ''}
+                        {availability.inCart} {hasCheckoutAttempt ? (availability.inCart > 1 ? 'réservés' : 'réservé') : 'dans votre panier'}
                       </p>
                     ) : (
-                      <p>{item.stock} disponible{item.stock > 1 ? 's' : ''}</p>
+                      <p>Disponible</p>
                     )}
                   </div>
                   <div className="mt-auto flex items-end justify-between gap-3 pt-7">

@@ -1,6 +1,6 @@
 import DeliveryDetails from '@/components/orders/DeliveryDetails';
 import FulfillmentControls from './FulfillmentControls';
-import { shortReference, type FulfillmentUpdate } from '@/lib/shipping';
+import { shortReference, fulfillmentLabels, type FulfillmentUpdate } from '@/lib/shipping';
 import { ArrowLeft, ArrowRight, ClipboardList, Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReservationStatus from './ReservationStatus';
@@ -84,8 +84,8 @@ export default function OrdersView({
           </div>
         </form>
         <div className={styles.orderSearchOptions}>
-          <label>Classer les clients
-            <select aria-label="Classement des clients" value={filters.sort} disabled={loading}
+          <label>Trier les commandes
+            <select aria-label="Tri des commandes" value={filters.sort} disabled={loading}
               onChange={(event) => onFilters({ ...filters, sort: event.target.value as AdminOrderFilters['sort'] })}>
               <option value="date_desc">Plus récentes</option>
               <option value="name_asc">Nom A → Z</option>
@@ -165,7 +165,7 @@ export default function OrdersView({
                   <span
                     className={`${styles.badge} ${styles[order.status.toLowerCase()]}`}
                   >
-                    {statuses[order.status]}
+                    {order.paymentStatus === 'PAID' ? fulfillmentLabels[order.fulfillmentStatus ?? 'UNFULFILLED'] : statuses[order.status]}
                   </span>
                 </div>
               </div>
@@ -190,9 +190,9 @@ export default function OrdersView({
               {order.deliveredAt ? (
                 <p className={styles.deliveryDate}>
                   <time dateTime={order.deliveredAt}>
-                    Réception confirmée le {dateFormat.format(new Date(order.deliveredAt))}
+                    Livraison déclarée le {dateFormat.format(new Date(order.deliveredAt))}
                   </time>
-                  <small>Statut enregistré dans CONNECTA</small>
+                  <small>Statut renseigné dans l’administration</small>
                 </p>
               ) : order.shippedAt ? (
                 <p className={styles.shippingDate}>
@@ -201,7 +201,7 @@ export default function OrdersView({
               ) : null}
               <details className={styles.details}>
                 <summary>Détail de la commande</summary>
-                <p className={styles.orderId}>Réservation n° {shortReference(order.id)}</p>
+                <p className={styles.orderId}>{order.paymentStatus === 'PAID' ? 'Commande' : 'Réservation'} n° {shortReference(order.id)}</p>
                 {order.items.map((item) => (
                   <div key={item.productId} className={styles.orderItem}>
                     <div>
