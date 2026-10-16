@@ -79,3 +79,32 @@ export function getReservedTotals(
     ? { itemsTotal, shippingFee: reservation.shippingFee, total: reservation.total }
     : { itemsTotal, shippingFee: null, total: null };
 }
+
+/** Ordering for cart suggestions: accessories complement the basket first, then the lead product. */
+function suggestionRank(slug: string): number {
+  if (slug.includes('cable')) return 0;
+  if (slug.includes('chargeur')) return 1;
+  if (slug === 'hoco-ew75') return 3;
+  return 2;
+}
+
+/**
+ * Up to `max` live catalogue products absent from the basket that can really be added:
+ * active, in stock and within the existing cart limits. No suggestion once the basket
+ * is reserved for payment. Prices and stock come straight from the API products.
+ */
+export function getCartSuggestions(
+  catalog: ApiProduct[],
+  items: CartLine[],
+  { reserved = false, max = 2 }: { reserved?: boolean; max?: number } = {},
+): ApiProduct[] {
+  if (reserved || items.length === 0 || max < 1) return [];
+  return catalog
+    .filter((product) => !items.some((item) => item.productId === product.id))
+    .filter((product) => product.active && product.stock > 0)
+    .filter((product) => getCartStockAvailability(product, items, false).canAdd)
+    .map((product, index) => ({ product, index }))
+    .sort((a, b) => suggestionRank(a.product.slug) - suggestionRank(b.product.slug) || a.index - b.index)
+    .slice(0, max)
+    .map(({ product }) => product);
+}

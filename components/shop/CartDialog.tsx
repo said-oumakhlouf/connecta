@@ -10,7 +10,7 @@ import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
-import { getMultiCartPrice, getCartStockAvailability, getReservedTotals } from '@/lib/multi-cart';
+import { getMultiCartPrice, getCartStockAvailability, getCartSuggestions, getReservedTotals } from '@/lib/multi-cart';
 import { displayProductName } from '@/lib/product-display';
 import { getProductVisual } from '@/lib/catalog-display';
 
@@ -39,6 +39,7 @@ export default function CartDialog() {
     updateProductQuantity,
     removeProduct,
     clearCart,
+    addProduct,
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -101,6 +102,8 @@ export default function CartDialog() {
   // A pending order shows only its summary and two actions, never the form again.
   const reserved = hasCheckoutAttempt;
   const priced = getMultiCartPrice(catalog, cartItems, hasCheckoutAttempt);
+  // Live catalogue only; hidden once the basket is reserved for payment.
+  const suggestions = catalogLoading || catalogError ? [] : getCartSuggestions(catalog, cartItems, { reserved });
   const canSubmit =
     shippingFee !== undefined &&
     cartItems.length > 0 &&
@@ -223,6 +226,36 @@ export default function CartDialog() {
                 );
               })}
             </div>
+            {suggestions.length > 0 && !isSubmitting && (
+              <section aria-labelledby="cart-suggestions-title" className="mt-5 rounded-2xl border border-[#e9eaed] p-3 sm:p-4">
+                <h3 id="cart-suggestions-title" className="text-xs font-semibold text-[#17191d]">
+                  Complétez votre commande
+                </h3>
+                <ul className="mt-3 space-y-2">
+                  {suggestions.map(item => {
+                    const visual = getProductVisual(item.slug);
+                    const name = displayProductName(item.name);
+                    return (
+                      <li key={item.id} className="flex items-center gap-3">
+                        <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f7f8fa]">
+                          <Image src={visual.src} alt="" width={48} height={48}
+                            className={`h-full w-full object-contain ${visual.padded ? 'p-1' : ''}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-xs font-medium">{name}</p>
+                          <p className="mt-0.5 text-xs text-[#72767f]">{formatPrice(item.price)}</p>
+                        </div>
+                        <button type="button" onClick={() => addProduct(item.id)}
+                          aria-label={`Ajouter ${name} au panier`}
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#dfe3e8] px-3.5 text-xs font-semibold text-[#17191d] transition hover:border-[#235bfa] hover:text-[#235bfa]">
+                          <Plus size={13} aria-hidden /> Ajouter
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
             {!reserved && <>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-[#72767f]">
