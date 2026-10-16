@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, Cable, Package, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { displayProductName } from '@/lib/product-display';
 import Container from '@/components/layout/Container';
 import { useShop } from '@/components/shop/ShopProvider';
@@ -63,9 +63,12 @@ export default function CatalogPage() {
                   {isHoco ? (
                     <Image src="/images/hoco-ew75-features-800.webp" alt="Écouteurs Hoco EW75" width={800} height={600} className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.025]" />
                   ) : (
-                    <div className="grid size-26 place-items-center rounded-[26px] bg-white text-[#235bfa] shadow-sm">
-                      {isCable ? <Cable size={48} strokeWidth={1.2} /> : <Package size={48} strokeWidth={1.2} />}
-                    </div>
+                    <Image
+                      src={isCable ? '/images/connecta-cable-demo.webp' : '/images/connecta-chargeur-demo.webp'}
+                      alt={isCable ? 'Visuel illustratif d’un câble USB-A vers USB-C blanc' : 'Visuel illustratif d’un chargeur USB-C blanc'}
+                      width={420} height={420}
+                      className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.025]"
+                    />
                   )}
                   {item.slug.endsWith('-test') && (
                     <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-medium text-[#69717d]">Visuel de démonstration</span>

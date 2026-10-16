@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ArrowRight, Cable, LoaderCircle, Minus, Package, Plus, X } from 'lucide-react';
+import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import Image from 'next/image';
 import ShippingFields from './ShippingFields';
 import { shopApi } from '@/lib/shop-api';
 import { memberApi, MemberApiError, type MemberProfile } from '@/lib/member-api';
@@ -178,7 +179,10 @@ export default function CartDialog() {
                           <div className="h-75 w-80 origin-top-left scale-[0.2]">
                             <ProductVisual variant="case" />
                           </div>
-                        ) : item?.slug.includes('cable') ? <Cable size={25} /> : <Package size={25} />}
+                        ) : (
+                           <Image src={item?.slug.includes('cable') ? '/images/connecta-cable-demo.webp' : '/images/connecta-chargeur-demo.webp'}
+                             alt="" width={80} height={80} className="h-full w-full object-contain" />
+                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-semibold">{item ? displayProductName(item.name) : 'Produit indisponible'}</h3>
