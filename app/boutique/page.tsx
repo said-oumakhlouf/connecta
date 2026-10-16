@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { displayProductName } from '@/lib/product-display';
+import { orderStorefrontProducts } from '@/lib/catalog-display';
 import Container from '@/components/layout/Container';
 import { useShop } from '@/components/shop/ShopProvider';
 import { formatPrice } from '@/lib/shop-pricing';
@@ -10,6 +11,8 @@ import { getCartStockAvailability } from '@/lib/multi-cart';
 
 export default function CatalogPage() {
   const { catalog, catalogLoading, catalogError, cartItems, addProduct, openCart, isSubmitting, hasCheckoutAttempt, refreshProduct } = useShop();
+
+  const featuredCatalog = orderStorefrontProducts(catalog);
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] pb-20 text-[#17191d]">
@@ -25,7 +28,7 @@ export default function CatalogPage() {
             </p>
             <p className="mt-5 inline-flex items-start gap-2 text-xs leading-5 text-[#747982]">
               <ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#235bfa]" aria-hidden="true" />
-              <span>Boutique de démonstration · Produits fictifs et paiements de test, sans débit réel.</span>
+              <span>Mode démonstration : catalogue d’essai et paiements fictifs, sans débit réel.</span>
             </p>
           </div>
         </div>
@@ -52,7 +55,7 @@ export default function CatalogPage() {
           </div>
         )}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {catalog.map(item => {
+          {featuredCatalog.map(item => {
             const isHoco = item.slug === 'hoco-ew75';
             const isCable = item.slug.includes('cable');
             const availability = getCartStockAvailability(item, cartItems, hasCheckoutAttempt);
@@ -67,18 +70,15 @@ export default function CatalogPage() {
                       src={isCable ? '/images/connecta-cable-demo.webp' : '/images/connecta-chargeur-demo.webp'}
                       alt={isCable ? 'Visuel illustratif d’un câble USB-A vers USB-C blanc' : 'Visuel illustratif d’un chargeur USB-C blanc'}
                       width={420} height={420}
-                      className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.025]"
+                      className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.025] sm:p-4"
                     />
-                  )}
-                  {item.slug.endsWith('-test') && (
-                    <span className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-medium text-[#69717d]">Visuel de démonstration</span>
                   )}
                 </div>
                 <div className="flex flex-1 flex-col p-6">
                   <p className="text-[10px] font-bold tracking-[1.6px] text-[#90959e]">{isHoco ? 'ÉCOUTEURS SANS FIL' : 'ACCESSOIRES CONNECTA'}</p>
                   <h2 className="mt-2 text-xl font-semibold tracking-[-0.6px]">{displayProductName(item.name)}</h2>
                   {isHoco && item.duoPrice != null && item.duoPrice < item.price * 2 && (
-                    <p className="mt-2 text-xs font-medium text-[#235bfa]">Offre Duo : 2 pour {formatPrice(item.duoPrice)}</p>
+                    <p className="mt-2 text-xs font-semibold text-[#235bfa]">Offre Duo · 2 pour {formatPrice(item.duoPrice)} · Économisez {formatPrice(item.price * 2 - item.duoPrice)}</p>
                   )}
                   <div className="mt-2 space-y-1 text-xs text-[#72767f]" aria-live="polite">
                     {soldOut ? (
