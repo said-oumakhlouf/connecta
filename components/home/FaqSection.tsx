@@ -1,80 +1,71 @@
 'use client';
 
-import { useShop } from '@/components/shop/ShopProvider';
-import { PRODUCTS } from '@/data/products';
 import { ChevronDown } from 'lucide-react';
 
-const product = PRODUCTS.ew75;
-export default function FaqSection() {
-  const { offers } = useShop();
-  const soloOffer = offers.solo;
-  const duoOffer = offers.duo;
-  const duoUnitPrice = duoOffer.price / duoOffer.quantity;
-  const duoSavings = soloOffer.price * duoOffer.quantity - duoOffer.price;
+import Container from '@/components/layout/Container';
+import { useShop } from '@/components/shop/ShopProvider';
+import { getOfferSavings } from '@/lib/product-page';
+import { formatPrice } from '@/lib/shop-pricing';
 
-  const FAQS = [
+/** Answers describe the current checkout only; no delivery delay, warranty or returns promise is made here. */
+export default function FaqSection() {
+  const { offers, product } = useShop();
+  const savings = getOfferSavings(offers.solo.price, offers.duo.price, offers.duo.quantity);
+  const duoAnswer =
+    product && savings.amount > 0
+      ? `Le pack comprend ${offers.duo.quantity} paires de Hoco EW75 pour ${formatPrice(Math.round(offers.duo.price * 100))}, soit ${formatPrice(savings.perUnit)} la paire et ${formatPrice(savings.amount)} de moins que deux paires achetées séparément. La remise s’applique automatiquement dans le panier pour chaque lot de deux paires.`
+      : 'La remise Duo s’applique automatiquement dans le panier pour chaque lot de deux paires de Hoco EW75.';
+
+  const faqs = [
     {
-      question: `Que contient une paire ${product.name} ?`,
-      answer: `Deux écouteurs ${product.name} et leur boîtier de recharge. Le contenu exact et les accessoires seront confirmés avant l’ouverture des ventes.`,
-    },
-    {
-      question: 'Puis-je les utiliser avec mon téléphone ?',
+      question: 'Quels produits propose CONNECTA ?',
       answer:
-        'Ils sont destinés aux appareils disposant du Bluetooth. La compatibilité précise sera confirmée dans la fiche produit définitive.',
+        'Une sélection d’accessoires du quotidien : les écouteurs sans fil Hoco EW75, un câble de charge et un chargeur secteur 20 W. Tous les produits disponibles sont présentés dans la boutique.',
     },
+    { question: 'Comment fonctionne l’offre Duo ?', answer: duoAnswer },
     {
-      question: 'Comment fonctionne l’offre Duo ?',
-      answer: `Le pack comprend ${duoOffer.quantity} paires pour ${duoOffer.price}€, soit ${duoUnitPrice} € la paire et ${duoSavings} € de moins que deux paires achetées séparément.`,
-    },
-    {
-      question: 'Quelles sont les conditions de livraison et de retour ?',
+      question: 'Combien coûte la livraison ?',
       answer:
-        'Les modalités de livraison, de retour et de garantie seront précisées avant le lancement des ventes.',
+        'Les frais dépendent du pays de livraison. Ils sont calculés et affichés dans le panier, avec le total à payer, avant toute validation du paiement.',
     },
-  ] as const;
+    {
+      question: 'Comment suivre ma commande ?',
+      answer:
+        'Rendez-vous dans votre espace client avec l’adresse email utilisée pour la commande : vous recevez un lien de connexion, sans mot de passe. Le statut et le numéro de suivi y apparaissent dès l’expédition.',
+    },
+    {
+      question: 'Le paiement est-il réellement débité ?',
+      answer:
+        'Pas pour le moment. La boutique fonctionne en mode test : le paiement par carte passe par Stripe, mais aucun débit réel n’est effectué.',
+    },
+  ];
 
   return (
-    <section
-      id="faq"
-      className="mx-auto grid w-full max-w-310 grid-cols-1 gap-4 px-5.5 py-13.75 md:grid-cols-[1fr_1.35fr] md:gap-15 md:px-12 md:py-22.5 xl:max-w-335 2xl:max-w-375 2xl:px-16 2xl:py-25"
-    >
-      {/* INTRO */}
-      <div>
-        <span className="text-[10px] font-bold tracking-[1.6px] text-[#747983]">
-          FAQ
-        </span>
+    <section id="faq" aria-labelledby="faq-title" className="bg-white py-16 md:py-24">
+      <Container className="grid gap-8 md:grid-cols-[0.8fr_1.2fr] md:gap-16">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[1.6px] text-muted">Aide</p>
+          <h2 id="faq-title" className="mt-2 text-[28px] font-semibold tracking-[-1.2px] text-ink md:text-[36px]">
+            Questions fréquentes
+          </h2>
+        </div>
 
-        <h2 className="mt-4 max-w-110 text-[38px] font-medium leading-[1.08] tracking-[-2px] md:text-[50px]">
-          Une question ?
-          <br />
-          On vous répond.
-        </h2>
-
-        <p className="mt-6 max-w-95 text-[13px] leading-[1.8] text-[#72767f] md:text-[14px]">
-          Retrouvez l’essentiel sur les {product.name}, l’offre Duo, la
-          livraison et les retours.
-        </p>
-      </div>
-
-      {/* FAQ */}
-      <div id="questions">
-        {FAQS.map(({ question, answer }) => (
-          <details key={question} className="group border-b border-[#e9eaed]">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-5.25 text-[12px] leading-[1.6] marker:hidden 2xl:text-sm">
-              <span>{question}</span>
-
-              <ChevronDown
-                size={18}
-                className="shrink-0 text-[#858b96] transition-transform duration-200 group-open:rotate-180"
-              />
-            </summary>
-
-            <p className="m-0 pr-6.25 pb-3.75 text-[12px] leading-[1.8] text-[#72767f] 2xl:text-sm">
-              {answer}
-            </p>
-          </details>
-        ))}
-      </div>
+        <div>
+          {faqs.map(({ question, answer }) => (
+            <details key={question} className="group border-b border-line">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-5 text-[15px] font-medium text-ink marker:hidden">
+                <span>{question}</span>
+                <ChevronDown
+                  size={18}
+                  aria-hidden
+                  className="shrink-0 text-muted transition-transform duration-200 group-open:rotate-180"
+                />
+              </summary>
+              <p className="m-0 pr-6 pb-5 text-sm leading-7 text-muted">{answer}</p>
+            </details>
+          ))}
+        </div>
+      </Container>
     </section>
   );
 }

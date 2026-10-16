@@ -2,36 +2,44 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowRight, LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import Image from 'next/image';
 import ShippingFields from './ShippingFields';
 import { shopApi } from '@/lib/shop-api';
 import { memberApi, MemberApiError, type MemberProfile } from '@/lib/member-api';
 import type { ShippingAddress, ShippingOptions } from '@/lib/shipping';
-import ProductVisual from '@/components/product/ProductVisual';
 import BrandName from '@/components/layout/BrandName';
 import { useShop } from '@/components/shop/ShopProvider';
-import { PRODUCTS } from '@/data/products';
-import { formatPrice, MAX_ORDER_UNITS } from '@/lib/shop-pricing';
+import { formatPrice, getCartPrice } from '@/lib/shop-pricing';
+import { getMultiCartPrice, getCartStockAvailability, getCartSuggestions, getReservedTotals } from '@/lib/multi-cart';
+import { displayProductName } from '@/lib/product-display';
+import { getProductVisual } from '@/lib/catalog-display';
 
 export default function CartDialog() {
   const {
     dialogRef,
-    cart,
-    cartOffer,
+    cartItems,
+    catalog,
+    catalogLoading,
+    catalogError,
     cartCount,
     cartTotal,
     cartDiscount,
-    maxCartCount,
-    product,
-    productLoading,
-    productError,
     orderError,
     isSubmitting,
     hasCheckoutAttempt,
+    isCancellingCheckout,
+    cancelCurrentCheckout,
+    reservation,
+    isResumingCheckout,
+    resumeCheckout,
     cartOpenVersion,
     closeCart,
     submitOrder,
     refreshProduct,
-    updateCartQuantity,
+    updateProductQuantity,
+    removeProduct,
+    clearCart,
+    addProduct,
   } = useShop();
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -54,7 +62,7 @@ export default function CartDialog() {
         ? current : { ...current, country: options.destinations[0].country, postalCode: '', region: options.destinations[0].country === 'CA' ? 'QC' : '' });
     }).catch(() => { if (active) setShippingError('Impossible de charger les frais de livraison.'); });
     return () => { active = false; };
-  }, [shippingRefresh]);
+  }, [shippingRefresh, cartOpenVersion]);
   useEffect(() => {
     if (cartOpenVersion === 0) return;
     let active = true;
@@ -91,20 +99,30 @@ export default function CartDialog() {
   }, [cartOpenVersion, accountRetry]);
 
   const shippingFee = shippingOptions?.destinations.find(d => d.country === shippingAddress.country)?.fee;
-  const unavailable = product && (!product.active || product.stock === 0);
-  const insufficientStock = product && cartCount > product.stock;
+  // A pending order shows only its summary and two actions, never the form again.
+  const reserved = hasCheckoutAttempt;
+  const priced = getMultiCartPrice(catalog, cartItems, hasCheckoutAttempt);
+  // Live catalogue only; hidden once the basket is reserved for payment.
+  const suggestions = catalogLoading || catalogError ? [] : getCartSuggestions(catalog, cartItems, { reserved });
   const canSubmit =
     shippingFee !== undefined &&
-    cartCount <= MAX_ORDER_UNITS &&
-    !!product &&
-    !productLoading &&
-    !productError &&
-    (hasCheckoutAttempt || (!unavailable && !insufficientStock)) &&
+    cartItems.length > 0 &&
+    !catalogLoading &&
+    !catalogError &&
+    !reserved &&
+    priced.valid &&
     !isSubmitting &&
     accountState === 'ready';
 
+  const reservedTotals = getReservedTotals(cartTotal, reservation);
+  const reservationBusy = isCancellingCheckout || isResumingCheckout || isSubmitting;
+  const reservedUntil = reservation?.expiresAt
+    ? new Date(reservation.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : null;
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (reserved) return;
     if (shippingFee === undefined) return;
     if (accountState !== 'ready') return;
     void submitOrder({ customerName, customerEmail, shippingAddress, expectedShippingFee: shippingFee }, !!member);
@@ -147,106 +165,124 @@ export default function CartDialog() {
           </button>
         </div>
 
-        {cart && cartOffer ? (
+        {cartItems.length > 0 ? (
           <form onSubmit={handleSubmit} aria-busy={isSubmitting}>
-            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-[#f7f8fa] p-3 sm:gap-4 sm:p-4">
-              <div className="h-18 w-18 shrink-0 overflow-hidden rounded-xl bg-white">
-                <div className="h-75 w-80 origin-top-left scale-[0.225]">
-                  <ProductVisual variant="case" />
-                </div>
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-[9px] font-bold tracking-[1.2px] text-[#90959e]">
-                  {cartOffer.id === 'duo' ? 'PACK DUO' : 'SOLO'}
-                </span>
-                <h3 className="mt-1 text-base font-semibold">
-                  {product?.name ?? PRODUCTS.ew75.name}
+            <div className="mt-6 space-y-3">
+              {cartItems.map((line) => {
+                const item = catalog.find(p => p.id === line.productId);
+                const lineAmount = item ? getCartPrice(item.price, item.duoPrice, line.quantity).total : 0;
+                const availability = item ? getCartStockAvailability(item, cartItems, hasCheckoutAttempt) : null;
+                return (
+                  <div key={line.productId} className="rounded-2xl bg-[#f7f8fa] p-3 sm:p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-white text-[#235bfa]">
+                        {item ? (
+                          <Image src={getProductVisual(item.slug).src} alt="" width={80} height={80}
+                            className={`h-full w-full object-contain ${getProductVisual(item.slug).padded ? 'p-1' : ''}`} />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold">{item ? displayProductName(item.name) : 'Produit indisponible'}</h3>
+                        <p className="mt-1 text-xs text-[#72767f]">
+                          {item ? `${formatPrice(item.price)} l’unité` : 'Référence non disponible'}
+                        </p>
+                        {!reserved && (
+                          <button type="button" disabled={isSubmitting}
+                            onClick={() => removeProduct(line.productId)}
+                            className="mt-2 text-[11px] text-[#72767f] underline disabled:opacity-40">
+                            Retirer
+                          </button>
+                        )}
+                      </div>
+                      <strong className="text-sm font-semibold">{item ? formatPrice(lineAmount) : '—'}</strong>
+                    </div>
+                    {reserved ? (
+                      <p className="mt-3 border-t border-[#e1e4e9] pt-3 text-xs text-[#72767f]">
+                        Quantité : {line.quantity}
+                      </p>
+                    ) : (
+                      <div className="mt-3 flex items-center justify-between border-t border-[#e1e4e9] pt-3">
+                        <span className="text-xs text-[#72767f]">
+                          {item && availability ? `${line.quantity} ${hasCheckoutAttempt ? (line.quantity > 1 ? 'réservés' : 'réservé') : 'dans votre panier'} · ${availability.outsideCart} encore disponible${availability.outsideCart > 1 ? 's' : ''}` : 'Produit introuvable'}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button type="button" aria-label={`Diminuer ${item?.name ?? 'produit'}`}
+                            disabled={isSubmitting || hasCheckoutAttempt || !item}
+                            onClick={() => updateProductQuantity(line.productId, -1)}
+                            className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                            <Minus size={14} />
+                          </button>
+                          <span className="min-w-4 text-center text-xs font-semibold">{line.quantity}</span>
+                          <button type="button" aria-label={`Augmenter ${item?.name ?? 'produit'}`}
+                            disabled={isSubmitting || hasCheckoutAttempt || !item || !availability?.canAdd}
+                            onClick={() => updateProductQuantity(line.productId, 1)}
+                            className="grid size-8 place-items-center rounded-full border border-[#dfe3e8] disabled:opacity-40">
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {suggestions.length > 0 && !isSubmitting && (
+              <section aria-labelledby="cart-suggestions-title" className="mt-5 rounded-2xl border border-[#e9eaed] p-3 sm:p-4">
+                <h3 id="cart-suggestions-title" className="text-xs font-semibold text-[#17191d]">
+                  Complétez votre commande
                 </h3>
-                <p className="mt-1 text-xs text-[#72767f]">
-                  {PRODUCTS.ew75.color} · {cartOffer.title}
-                </p>
-              </div>
-              <strong className="shrink-0 text-lg font-semibold tracking-[-0.8px]">
-                {formatPrice(cartOffer.price * 100)}
-              </strong>
-            </div>
-
-            <div className="mt-5 flex items-center justify-between border-b border-[#e9eaed] pb-5">
-              <div>
-                <span className="block text-sm font-medium">
-                  {cartOffer.id === 'duo'
-                    ? 'Nombre de packs'
-                    : 'Nombre de paires'}
-                </span>
-                <span className="mt-1 block text-xs text-[#8b9098]">
-                  {cartCount} paire{cartCount > 1 ? 's' : ''} au total
-                </span>
-              </div>
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  aria-label="Diminuer la quantité"
-                  disabled={cart.count <= 1 || isSubmitting || productLoading}
-                  onClick={() => updateCartQuantity(-1)}
-                  className="grid size-9 place-items-center rounded-full border border-[#e0e3e8] bg-white disabled:opacity-30"
-                >
-                  <Minus size={14} />
+                <ul className="mt-3 space-y-2">
+                  {suggestions.map(item => {
+                    const visual = getProductVisual(item.slug);
+                    const name = displayProductName(item.name);
+                    return (
+                      <li key={item.id} className="flex items-center gap-3">
+                        <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#f7f8fa]">
+                          <Image src={visual.src} alt="" width={48} height={48}
+                            className={`h-full w-full object-contain ${visual.padded ? 'p-1' : ''}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-xs font-medium">{name}</p>
+                          <p className="mt-0.5 text-xs text-[#72767f]">{formatPrice(item.price)}</p>
+                        </div>
+                        <button type="button" onClick={() => addProduct(item.id)}
+                          aria-label={`Ajouter ${name} au panier`}
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#dfe3e8] px-3.5 text-xs font-semibold text-[#17191d] transition hover:border-[#235bfa] hover:text-[#235bfa]">
+                          <Plus size={13} aria-hidden /> Ajouter
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+            {!reserved && <>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-[#72767f]">
+                {cartCount} {cartCount === 1 ? 'article' : 'articles'} dans votre panier
+              </p>
+              {!hasCheckoutAttempt && (
+                <button type="button" disabled={isSubmitting || isCancellingCheckout}
+                  onClick={clearCart}
+                  className="text-xs font-medium text-[#72767f] underline hover:text-[#17191d] disabled:opacity-40">
+                  Vider le panier
                 </button>
-                <span
-                  aria-live="polite"
-                  className="min-w-5 text-center text-sm font-semibold"
-                >
-                  {cart.count}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Augmenter la quantité"
-                  disabled={
-                    cart.count >= maxCartCount || isSubmitting || productLoading
-                  }
-                  onClick={() => updateCartQuantity(1)}
-                  className="grid size-9 place-items-center rounded-full border border-[#e0e3e8] bg-white disabled:opacity-30"
-                >
-                  <Plus size={14} />
+              )}
+            </div>
+            </>}
+            {!catalogLoading && !catalogError && !priced.valid && !hasCheckoutAttempt && (
+              <p role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
+                Un produit est épuisé, inactif ou le panier dépasse le stock disponible.
+              </p>
+            )}
+            {catalogError && (
+              <div role="alert" className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs text-[#ae302a]">
+                {catalogError}
+                <button type="button" className="ml-2 underline" onClick={() => void refreshProduct()}>
+                  Actualiser
                 </button>
-              </div>
-            </div>
-
-            <div aria-live="polite" className="mt-3 text-xs text-[#72767f]">
-              {productLoading
-                ? 'Vérification du prix et du stock…'
-                : product
-                  ? `${product.stock} paire(s) en stock`
-                  : null}
-            </div>
-            <p className="mt-2 text-xs text-[#72767f]">
-              Maximum 10 paires par commande (5 packs Duo). Une seule réservation
-              non payée par email : annulez-la avant de changer votre commande.
-            </p>
-            {(productError || unavailable || insufficientStock) && (
-              <div
-                role="alert"
-                className="mt-3 rounded-xl bg-[#fff1f0] p-3 text-xs leading-5 text-[#ae302a]"
-              >
-                {productError ??
-                  (unavailable
-                    ? 'Ce produit est actuellement épuisé.'
-                    : 'La quantité demandée dépasse le stock disponible. Diminuez la quantité ou choisissez une paire Solo.')}
-                {productError && (
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      void refreshProduct();
-                    }}
-                    className="mt-2 block font-semibold underline"
-                  >
-                    Actualiser la disponibilité
-                  </button>
-                )}
               </div>
             )}
-
             <div className="mt-4 space-y-3 border-b border-[#e9eaed] pb-5 text-sm">
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-[#235bfa]">
@@ -257,15 +293,56 @@ export default function CartDialog() {
               <div className="flex items-end justify-between">
                 <div>
                   <span className="block text-[#72767f]">Sous-total des articles</span>
-                  <span className="mt-1 block text-[10px] text-[#a0a5ad]">
-                    Livraison calculée selon la destination
-                  </span>
+                  {!reserved && (
+                    <span className="mt-1 block text-[10px] text-[#a0a5ad]">
+                      Livraison calculée selon la destination
+                    </span>
+                  )}
                 </div>
                 <strong className="text-[30px] font-semibold tracking-[-1.5px]">
-                  {formatPrice(cartTotal)}
+                  {formatPrice(reservedTotals.itemsTotal)}
                 </strong>
               </div>
             </div>
+
+            {reserved ? (
+              <>
+                <div className="mt-5 space-y-3 rounded-2xl bg-[#f7f8fa] p-4 text-sm" aria-live="polite">
+                  <div className="flex justify-between gap-3"><span>Livraison</span><strong>{reservedTotals.shippingFee === null ? 'Vérification…' : formatPrice(reservedTotals.shippingFee)}</strong></div>
+                  <div className="flex justify-between gap-3 border-t border-[#e0e3e8] pt-3 text-lg"><span>Total à payer</span><strong>{reservedTotals.total === null ? '—' : formatPrice(reservedTotals.total)}</strong></div>
+                  <p className="text-xs leading-5 text-[#72767f]">
+                    Votre commande est en attente de paiement.
+                    {reservedUntil ? ` Vos articles sont réservés jusqu’à ${reservedUntil}.` : ''}
+                  </p>
+                </div>
+                {orderError && (
+                  <p role="alert" className="mt-4 rounded-xl bg-[#fff1f0] p-3 text-xs leading-5 text-[#ae302a]">
+                    {orderError}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  disabled={reservationBusy}
+                  onClick={() => void resumeCheckout()}
+                  className="mt-5 flex w-full items-center justify-between rounded-full bg-[#235bfa] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#1645cf] disabled:cursor-default disabled:opacity-45"
+                >
+                  {isResumingCheckout ? 'Ouverture du paiement…' : 'Reprendre le paiement'}
+                  {isResumingCheckout ? <LoaderCircle size={17} className="animate-spin" /> : <ArrowRight size={15} />}
+                </button>
+                <button
+                  type="button"
+                  disabled={reservationBusy}
+                  onClick={() => void cancelCurrentCheckout()}
+                  className="mt-3 w-full rounded-full border border-[#dfe3e8] bg-white px-6 py-4 text-sm font-semibold text-[#17191d] transition hover:bg-[#f4f5f7] disabled:opacity-45"
+                >
+                  {isCancellingCheckout ? 'Annulation en cours…' : 'Annuler la réservation'}
+                </button>
+                <p className="mt-3 text-center text-[11px] leading-5 text-[#8b9098]">
+                  L’annulation remet les articles en vente et vide votre panier. Mode test : aucun débit réel.
+                </p>
+              </>
+            ) : (
+            <>
 
             <fieldset
               disabled={isSubmitting}
@@ -343,10 +420,11 @@ export default function CartDialog() {
               <div className="flex justify-between gap-3"><span>Livraison</span><strong>{shippingFee === undefined ? 'Indisponible' : formatPrice(shippingFee)}</strong></div>
               <div className="flex justify-between gap-3 border-t border-[#e0e3e8] pt-3 text-lg"><span>Total à payer</span><strong>{shippingFee === undefined ? '—' : formatPrice(cartTotal + shippingFee)}</strong></div>
               <p className="text-xs text-[#72767f]">Montants en euros, livraison incluse.</p>
-              {shippingOptions?.provisional && <p className="text-xs text-[#72767f]">Tarifs de livraison provisoires pour les essais.</p>}
               {shippingError && <p role="alert" className="text-[#ae302a]">{shippingError}</p>}
               {shippingOptions?.destinations.length === 0 && <p>Aucune destination disponible pour le moment.</p>}
-              <button type="button" disabled={isSubmitting} className="text-xs underline" onClick={() => setShippingRefresh(v => v + 1)}>Actualiser les frais de livraison</button>
+              {(shippingError || (shippingOptions !== null && shippingOptions.destinations.length === 0) || orderError?.includes('tarif de livraison')) && (
+                <button type="button" disabled={isSubmitting} className="text-xs underline" onClick={() => setShippingRefresh(v => v + 1)}>Recalculer les frais de livraison</button>
+              )}
             </div>
 
             {orderError && (
@@ -355,16 +433,6 @@ export default function CartDialog() {
                 className="mt-4 rounded-xl bg-[#fff1f0] p-3 text-xs leading-5 text-[#ae302a]"
               >
                 {orderError}
-              </p>
-            )}
-            {hasCheckoutAttempt && (
-              <p className="mt-3 text-xs leading-5 text-[#72767f]">
-                Une tentative existe déjà. Réessayez avec les mêmes coordonnées
-                et quantités pour la reprendre, ou{' '}
-                <a href="/paiement?retour=1" className="underline">
-                  vérifiez votre réservation
-                </a>
-                .
               </p>
             )}
             <button
@@ -380,8 +448,8 @@ export default function CartDialog() {
               )}
             </button>
             <p className="mt-3 text-center text-[11px] leading-5 text-[#8b9098]">
-              Paiement Stripe en mode test : aucun débit réel. Articles réservés
-              environ 30 minutes.
+              Paiement sécurisé par carte · mode test, aucun débit réel. Articles
+              réservés environ 30 minutes.
             </p>
             <button
               type="button"
@@ -391,8 +459,17 @@ export default function CartDialog() {
             >
               Continuer mes achats
             </button>
+            </>
+            )}
           </form>
-        ) : null}
+        ) : (
+          <div className="mt-6 space-y-3 text-sm text-[#72767f]">
+            {(orderError || catalogError) && (
+              <p role="alert" className="rounded-xl bg-[#fff1f0] p-3 text-[#ae302a]">{orderError ?? catalogError}</p>
+            )}
+            <p>Votre panier est vide. <a href="/boutique" className="text-[#235bfa] underline">Découvrir la boutique</a></p>
+          </div>
+        )}
       </div>
     </dialog>
   );

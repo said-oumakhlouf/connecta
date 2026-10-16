@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import MemberPanel from '@/components/member/MemberPanel';
 
 export const metadata: Metadata = {
-  title: 'Mon compte | CONNECTA',
+  title: 'Mon compte',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

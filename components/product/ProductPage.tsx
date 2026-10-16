@@ -42,7 +42,7 @@ const REASSURANCE: { Icon: LucideIcon; title: string; text: string }[] = [
   {
     Icon: CreditCard,
     title: 'Paiement sécurisé',
-    text: 'Règlement par carte via Stripe.',
+    text: 'Règlement sécurisé par carte bancaire.',
   },
   {
     Icon: Truck,
@@ -125,8 +125,8 @@ export default function ProductPage() {
         ? 'Vérification…'
         : cta.status === 'ready'
           ? selectedOffer === 'duo'
-            ? 'Commander le Duo'
-            : 'Commander une paire'
+            ? 'Ajouter le Duo au panier'
+            : 'Ajouter une paire au panier'
           : 'Indisponible';
 
   return (

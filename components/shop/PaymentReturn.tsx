@@ -10,6 +10,7 @@ import {
 } from "@/lib/shop-api";
 import { formatPrice } from "@/lib/shop-pricing";
 import { shortReference } from "@/lib/shipping";
+import { clearFinalizedCheckout } from "@/lib/checkout-storage";
 import BrandName from "@/components/layout/BrandName";
 
 export default function PaymentReturn() {
@@ -53,10 +54,7 @@ export default function PaymentReturn() {
       const result = await shopApi.checkoutStatus(sessionId);
       if (sequence !== requestSequence.current) return;
       setData(result);
-      if (result.paymentStatus !== "UNPAID") {
-        sessionStorage.removeItem("connectaCheckoutAttempt");
-        sessionStorage.removeItem("connectaCheckoutSession");
-      }
+      clearFinalizedCheckout(sessionStorage, result.paymentStatus);
     } catch (problem) {
       if (sequence !== requestSequence.current) return;
       setError(
@@ -93,9 +91,11 @@ export default function PaymentReturn() {
     setLoading(true);
     setError("");
     try {
-      setData(await shopApi.cancelCheckout(sessionId));
-      sessionStorage.removeItem("connectaCheckoutAttempt");
-      sessionStorage.removeItem("connectaCheckoutSession");
+      const result = await shopApi.cancelCheckout(sessionId);
+      setData(result);
+      if (!clearFinalizedCheckout(sessionStorage, result.paymentStatus)) {
+        throw new Error("La réservation est encore active : le panier a été conservé.");
+      }
     } catch (problem) {
       setError(
         problem instanceof Error ? problem.message : "Annulation indisponible.",
@@ -126,12 +126,12 @@ export default function PaymentReturn() {
         </h1>
         <p className="mt-4 text-sm leading-6 text-[#72767f]">
           {paid
-            ? "Stripe a confirmé le paiement de test. Votre commande est enregistrée ; aucun argent réel n’a été débité."
+            ? "Votre paiement de test est confirmé. Votre commande est enregistrée ; aucun argent réel n’a été débité."
             : expired
               ? "Les articles ont été remis à disposition. Vous pouvez revenir à la boutique."
               : params.get("retour") === "1"
                 ? "Vous avez quitté le paiement. Reprenez-le ou annulez la réservation pour libérer les articles."
-                : "Nous vérifions la confirmation auprès de Stripe. Le retour sur cette page ne suffit pas à valider un paiement."}
+                : "Nous vérifions la confirmation de votre paiement. Cette page se met à jour automatiquement."}
         </p>
         {data && (
           <dl className="mt-7 space-y-4 rounded-2xl bg-[#f7f8fa] p-5 text-left text-sm">
@@ -210,7 +210,7 @@ export default function PaymentReturn() {
           </p>
         )}
         <a
-          href="/"
+          href="/boutique"
           className="mt-7 inline-block text-sm font-semibold text-[#235bfa]"
         >
           Retour à la boutique →

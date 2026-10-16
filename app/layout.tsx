@@ -4,6 +4,7 @@ import { Inter, Montserrat } from 'next/font/google';
 
 import SiteShell from '@/components/layout/SiteShell';
 import { SITE } from '@/data/site';
+import { getSiteUrl, isIndexingAllowed } from '@/lib/seo';
 
 import './globals.css';
 
@@ -19,9 +20,15 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  title: SITE.name,
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
+  title: { default: SITE.name, template: `%s | ${SITE.name}` },
   description: SITE.description,
+  applicationName: SITE.name,
+  // Test phase: nothing is indexable unless NEXT_PUBLIC_ALLOW_INDEXING=true (see lib/seo.ts).
+  robots: isIndexingAllowed() ? { index: true, follow: true } : { index: false, follow: false },
 };
 
 type RootLayoutProps = Readonly<{

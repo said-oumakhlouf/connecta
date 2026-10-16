@@ -40,6 +40,18 @@ export type CheckoutSession = {
   total: number;
   testMode: true;
 };
+/** Reservation state returned by the checkout-key routes: amounts and status only. */
+export type ReservationState = {
+  orderId: string;
+  total: number;
+  shippingFee: number;
+  paymentStatus: 'UNPAID' | 'PAID' | 'EXPIRED';
+  expiresAt?: string;
+  testMode: true;
+  /** Present only when resuming an open reservation. */
+  sessionId?: string;
+  url?: string;
+};
 export type CheckoutStatus = {
   shippingFee?: number;
   orderId: string;
@@ -91,6 +103,27 @@ function isCheckoutStatus(value: unknown): value is CheckoutStatus {
   );
 }
 
+export function isReservationState(value: unknown): value is ReservationState {
+  return (
+    isRecord(value) &&
+    typeof value.orderId === 'string' &&
+    value.orderId.length > 0 &&
+    isAmount(value.total) &&
+    isAmount(value.shippingFee) &&
+    value.shippingFee <= value.total &&
+    ['UNPAID', 'PAID', 'EXPIRED'].includes(String(value.paymentStatus)) &&
+    (value.expiresAt === undefined ||
+      (typeof value.expiresAt === 'string' && Number.isFinite(Date.parse(value.expiresAt)))) &&
+    value.testMode === true &&
+    // A payment page is only accepted together with its test session identifier.
+    (value.url === undefined
+      ? value.sessionId === undefined
+      : isCheckoutUrl(value.url) &&
+        typeof value.sessionId === 'string' &&
+        /^cs_test_[a-zA-Z0-9]+$/.test(value.sessionId))
+  );
+}
+
 export class ShopApiError extends Error {
   constructor(
     message: string,
@@ -121,6 +154,10 @@ export function isProduct(value: unknown): value is ApiProduct {
     isAmount(value.stock) &&
     typeof value.active === 'boolean'
   );
+}
+
+function isProducts(value: unknown): value is ApiProduct[] {
+  return Array.isArray(value) && value.every(isProduct);
 }
 
 function isOrder(value: unknown): value is ApiOrder {
@@ -158,11 +195,26 @@ const errorMessages: Record<number, string> = {
   503: 'Le paiement est momentanément indisponible. Aucune commande payée n’a été confirmée.',
 };
 
+const reservationMessages: Record<number, string> = {
+  400: 'Commande en attente introuvable dans ce navigateur.',
+  404: 'Commande en attente introuvable.',
+  409: 'Votre paiement est en cours de confirmation. Réessayez dans quelques instants.',
+  429: 'Trop de demandes. Patientez quelques minutes avant de réessayer.',
+  503: 'Le paiement est momentanément indisponible. Votre commande reste réservée : réessayez dans un instant.',
+};
+
+const reservationBody = (checkoutKey: string): RequestInit => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ checkoutKey }),
+});
+
 export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
   async function request<T>(
     path: string,
     options: RequestInit,
     validate: (value: unknown) => value is T,
+    messages: Record<number, string> = {},
   ): Promise<T> {
     if (!baseUrl.trim()) {
       throw new ShopApiError(
@@ -192,7 +244,7 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
             ? 'Maximum 3 réservations non payées ou annulées en 31 minutes depuis cette connexion. Patientez ou reprenez votre réservation existante.'
             : undefined;
         throw new ShopApiError(
-          (isRecord(problem) && problem.code === 'SHIPPING_RATE_CHANGED' ? 'Le tarif de livraison a changé. Actualisez les frais avant de payer.' : reservationMessage) ?? errorMessages[response.status] ??
+          (isRecord(problem) && problem.code === 'SHIPPING_RATE_CHANGED' ? 'Le tarif de livraison a changé. Actualisez les frais avant de payer.' : reservationMessage) ?? messages[response.status] ?? errorMessages[response.status] ??
             'Le service de commande est momentanément indisponible.',
           response.status,
         );
@@ -242,6 +294,29 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         },
         isCheckout,
       ),
+    checkoutItems: (
+      customer: CustomerDetails,
+      items: Array<{ productId: number; quantity: number }>,
+      checkoutKey: string,
+      memberCheckout = false,
+    ) =>
+      request(
+        memberCheckout ? '/members/checkout' : '/payments/checkout',
+        {
+          method: 'POST',
+          ...(memberCheckout ? { credentials: 'include' as const } : {}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName: customer.customerName.trim(),
+            customerEmail: customer.customerEmail.trim().toLowerCase(),
+            items,
+            checkoutKey,
+            shippingAddress: customer.shippingAddress,
+            expectedShippingFee: customer.expectedShippingFee,
+          }),
+        },
+        isCheckout,
+      ),
     checkoutStatus: (sessionId: string) =>
       request(
         `/payments/checkout/${encodeURIComponent(sessionId)}`,
@@ -254,6 +329,13 @@ export function createShopApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         { method: 'POST' },
         isCheckoutStatus,
       ),
+    reservationStatus: (checkoutKey: string) =>
+      request('/payments/reservation/status', reservationBody(checkoutKey), isReservationState, reservationMessages),
+    resumeReservation: (checkoutKey: string) =>
+      request('/payments/reservation/resume', reservationBody(checkoutKey), isReservationState, reservationMessages),
+    cancelReservation: (checkoutKey: string) =>
+      request('/payments/reservation/cancel', reservationBody(checkoutKey), isReservationState, reservationMessages),
+    getProducts: () => request('/products', { method: 'GET' }, isProducts),
     getProduct: () =>
       request('/products/hoco-ew75', { method: 'GET' }, isProduct),
     createOrder: (

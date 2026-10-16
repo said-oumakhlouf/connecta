@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import PaymentReturn from '@/components/shop/PaymentReturn';
 
 export const metadata = {
-  title: 'Votre paiement | CONNECTA',
+  title: 'Votre paiement',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

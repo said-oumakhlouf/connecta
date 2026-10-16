@@ -1,8 +1,9 @@
 import { countryLabels, fulfillmentLabels, type ShippingOrder } from '@/lib/shipping';
 import { formatPrice } from '@/lib/shop-pricing';
 
-export default function DeliveryDetails({ order }: {
+export default function DeliveryDetails({ order, showFulfillment = true }: {
   order: ShippingOrder & { id: string; customerName: string; total: number; paymentStatus?: string };
+  showFulfillment?: boolean;
 }) {
   const address = order.shippingAddress;
   return <div className="mt-4 space-y-3 border-t border-[#e9eaed] pt-4 text-sm">
@@ -18,7 +19,7 @@ export default function DeliveryDetails({ order }: {
         {countryLabels[address.country]}
       </address>
     </div> : <p className="text-xs text-[#72767f]">Adresse non enregistrée pour cette ancienne commande.</p>}
-    {order.paymentStatus === 'PAID' && address && <div className="rounded-xl border border-[#dce5ff] p-4">
+    {showFulfillment && order.paymentStatus === 'PAID' && address && <div className="rounded-xl border border-[#dce5ff] p-4">
       <p className="font-semibold text-[#235bfa]">{fulfillmentLabels[order.fulfillmentStatus ?? 'UNFULFILLED']}</p>
       {order.trackingCarrier && order.trackingNumber && <p className="mt-2 break-words">{order.trackingCarrier} · Suivi n° <strong>{order.trackingNumber}</strong></p>}
       {order.shippedAt && <p className="mt-2 text-xs text-[#72767f]">Expédiée le {new Date(order.shippedAt).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}</p>}

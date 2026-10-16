@@ -1,7 +1,8 @@
-export const MAX_ORDER_UNITS = 10;
+// Maximum distinct references supported by the checkout DTO. Quantities are limited by stock.
+export const MAX_CART_REFERENCES = 100;
 
 export function getMaxCartCount(stock: number, unitsPerOffer: number) {
-  return Math.floor(Math.min(stock, MAX_ORDER_UNITS) / unitsPerOffer);
+  return Math.floor(stock / unitsPerOffer);
 }
 
 export function getCartPrice(

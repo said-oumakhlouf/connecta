@@ -15,6 +15,13 @@
 }
 
 @theme inline {
+  --color-brand: #235bfa;
+  --color-brand-dark: #1748cb;
+  --color-brand-soft: #edf2ff;
+  --color-ink: #17191d;
+  --color-muted: #646973;
+  --color-line: #e4e7ec;
+  --color-panel: #f6f7f9;
   --font-sans: var(--font-body);
   --font-heading: var(--font-montserrat), Arial, Helvetica, sans-serif;
   --font-body: var(--font-inter), Arial, Helvetica, sans-serif;
@@ -64,11 +71,10 @@ summary:focus-visible {
   outline-offset: 5px;
 }
 
-#produit,
-#connecta,
+#selection,
 #offres,
-#faq,
-#questions {
+#achat,
+#faq {
   scroll-margin-top: 110px;
 }
 

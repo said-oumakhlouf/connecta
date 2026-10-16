@@ -1,156 +1,84 @@
-'use client';
-
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 
 import Container from '@/components/layout/Container';
 
+/** Mood photos for the lead product. Pre-optimised WebP variants: the static export serves images as-is. */
 const MOMENTS = [
   {
-    time: '10:15',
-    title: 'Quand il faut se concentrer.',
-    text: 'Un format discret qui reste avec vous au bureau.',
-    image: '/images/hoco_work.jpg',
+    title: 'Au bureau',
+    text: 'Un format discret pour les appels et la concentration.',
+    image: '/images/hoco_work-1600.webp',
+    width: 1600,
+    height: 1067,
     imageClassName: 'object-[68%_center] md:object-center',
     featured: true,
-    delay: '0.05s',
   },
   {
-    time: 'Toute la journée',
-    title: 'Toujours à portée de main.',
-    text: 'Sur votre bureau, dans votre poche, toujours prêts.',
-    image: '/images/hoco_style.jpg',
+    title: 'Au quotidien',
+    text: 'Le boîtier se glisse dans une poche ou un sac.',
+    image: '/images/hoco_style-800.webp',
+    width: 800,
+    height: 534,
     imageClassName: 'object-[52%_center] md:object-center',
     featured: false,
-    delay: '0.22s',
   },
   {
-    time: '18:30',
-    title: 'Pendant la séance.',
-    text: 'Vos morceaux préférés vous accompagnent jusqu’au dernier effort.',
-    image: '/images/hoco_sport.jpg',
-    imageClassName: 'object-[55%_center] md:object-center',
+    title: 'En mouvement',
+    text: 'Sans fil, pour la marche ou la séance de sport.',
+    image: '/images/hoco_sport-800.webp',
+    width: 800,
+    height: 1200,
+    imageClassName: 'object-[55%_22%]',
     featured: false,
-    delay: '0.39s',
   },
 ] as const;
 
 export default function LifestyleSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-
-    if (!section) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.15,
-      },
-    );
-
-    observer.observe(section);
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section ref={sectionRef} className="pb-14 pt-4 md:pb-25 md:pt-7.5">
+    <section aria-labelledby="usages-title" className="bg-white pb-16 md:pb-24">
       <Container>
-        {/* HEADING */}
-        <div className="mb-6 md:mb-8.75 md:flex md:items-end md:justify-between md:gap-6.25">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-t border-line pt-10 md:mb-8 md:pt-14">
           <div>
-            <span className="text-[9px] font-bold tracking-[1.2px] text-[#747983] md:text-[10px] md:tracking-[1.6px] 2xl:text-[11px]">
-              DANS VOTRE QUOTIDIEN
-            </span>
-
-            <h2 className="mt-3 text-[30px] font-medium leading-[1.12] tracking-[-1.3px] sm:text-[34px] md:mt-3.75 md:text-[38px] md:tracking-[-1.7px] 2xl:text-[46px]">
-              Du matin au soir.
-              <br />
-              Toujours avec vous.
+            <p className="text-[11px] font-semibold uppercase tracking-[1.6px] text-muted">Hoco EW75 au quotidien</p>
+            <h2 id="usages-title" className="mt-2 text-[28px] font-semibold tracking-[-1.2px] text-ink md:text-[36px]">
+              Du bureau à la séance de sport.
             </h2>
           </div>
-
-          <p className="mt-4 max-w-80 text-[11px] leading-[1.75] text-[#72767f] md:mb-0.75 md:mt-0 md:text-xs 2xl:text-sm">
-            Les écouteurs qu&apos;on oublie.
-            <br />
-            Jusqu&apos;au moment où on en a besoin.
-          </p>
+          <Link
+            href="/produit/hoco-ew75"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-dark"
+          >
+            Voir la fiche produit <ArrowRight size={15} aria-hidden />
+          </Link>
         </div>
 
-        {/* IMAGES */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1.35fr_0.85fr] md:grid-rows-[repeat(2,300px)] md:gap-4.5 2xl:grid-rows-[repeat(2,350px)]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.35fr_0.85fr] md:grid-rows-[repeat(2,280px)] 2xl:grid-rows-[repeat(2,330px)]">
           {MOMENTS.map((moment) => (
-            <article
-              key={moment.time}
-              style={{
-                transitionDelay: isVisible ? moment.delay : '0s',
-              }}
-              className={`
-                group relative overflow-hidden rounded-[14px] bg-[#111]
-                transition-[opacity,transform] duration-750
-                ease-[cubic-bezier(0.22,1,0.36,1)]
-                motion-reduce:translate-y-0
-                motion-reduce:opacity-100
-                motion-reduce:transition-none
-                md:rounded-2xl
-
-                ${
-                  isVisible
-                    ? 'translate-y-0 opacity-100'
-                    : 'translate-y-7.5 opacity-0'
-                }
-
-                ${
-                  moment.featured
-                    ? 'h-92 sm:h-105 md:row-span-2 md:h-auto'
-                    : 'h-62 sm:h-70 md:h-auto'
-                }
-              `}
+            <figure
+              key={moment.title}
+              className={`relative m-0 overflow-hidden rounded-3xl bg-[#111] ${
+                moment.featured ? 'h-80 sm:h-96 md:row-span-2 md:h-auto' : 'h-60 sm:h-68 md:h-auto'
+              }`}
             >
               <Image
                 src={moment.image}
-                alt={moment.title}
-                fill
-                sizes={
-                  moment.featured
-                    ? '(max-width: 767px) 100vw, 65vw'
-                    : '(max-width: 767px) 100vw, 35vw'
-                }
-                className={`object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025] motion-reduce:transform-none motion-reduce:transition-none ${moment.imageClassName}`}
+                alt=""
+                width={moment.width}
+                height={moment.height}
+                loading="lazy"
+                className={`absolute inset-0 h-full w-full object-cover ${moment.imageClassName}`}
               />
-
-              <div className="absolute inset-0 z-1 bg-[linear-gradient(180deg,#00000008_10%,#00000008_38%,#000000c2_100%)]" />
-
-              <div className="absolute left-4 top-4 z-2 rounded-full border border-white/20 bg-black/15 px-2.5 py-1.5 text-[9px] font-semibold tracking-[0.8px] text-white backdrop-blur-xl md:left-7.5 md:top-7 md:text-[10px] 2xl:left-9.5 2xl:top-9">
-                {moment.time}
-              </div>
-
-              <div className="absolute inset-x-4 bottom-4 z-2 text-white md:bottom-7.5 md:left-7.5 md:right-7.5 2xl:bottom-9.5 2xl:left-9.5 2xl:right-9.5">
-                <h3
-                  className={
-                    moment.featured
-                      ? 'mb-2 max-w-125 text-[24px] font-medium leading-[1.08] tracking-[-1px] sm:text-[28px] md:text-[38px] md:tracking-[-1.8px] 2xl:text-[46px]'
-                      : 'mb-2 text-[22px] font-medium leading-[1.08] tracking-[-0.8px] sm:text-[25px] md:text-[25px] 2xl:text-[30px]'
-                  }
-                >
-                  {moment.title}
-                </h3>
-
-                <p className="m-0 max-w-85 text-[10px] leading-[1.6] text-white/80 sm:text-[11px] md:text-xs 2xl:text-sm">
-                  {moment.text}
-                </p>
-              </div>
-            </article>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_40%,#000000b3_100%)]" />
+              <figcaption className="absolute inset-x-5 bottom-5 text-white md:inset-x-7 md:bottom-7">
+                <strong className="block text-xl font-semibold tracking-[-0.6px] md:text-2xl">{moment.title}</strong>
+                <span className="mt-1 block max-w-85 text-[13px] leading-5 text-white/85">{moment.text}</span>
+              </figcaption>
+            </figure>
           ))}
         </div>
+        <p className="mt-4 text-xs text-muted">Photos d’ambiance, non contractuelles.</p>
       </Container>
     </section>
   );

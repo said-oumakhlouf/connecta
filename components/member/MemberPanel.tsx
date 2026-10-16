@@ -1,6 +1,7 @@
 'use client';
 
 import DeliveryDetails from '@/components/orders/DeliveryDetails';
+import { displayProductName } from '@/lib/product-display';
 import { fulfillmentLabels, shortReference } from '@/lib/shipping';
 import {
   useCallback,
@@ -10,7 +11,6 @@ import {
   type FormEvent,
 } from 'react';
 import {
-  ArrowLeft,
   ArrowRight,
   LoaderCircle,
   LogOut,
@@ -18,7 +18,6 @@ import {
   Package,
   RefreshCw,
 } from 'lucide-react';
-import Logo from '@/components/layout/Logo';
 import ReservationStatus from '@/components/admin/ReservationStatus';
 import {
   memberApi,
@@ -164,46 +163,38 @@ export default function MemberPanel() {
   return (
     <main className="min-h-screen bg-[#f6f7f9] px-4 py-7 text-[#17191d] sm:px-6 sm:py-10">
       <div className="mx-auto max-w-4xl">
-        <header className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 text-sm text-[#72767f]"
+        {/* The site header (logo, navigation, cart) is provided by SiteShell; only account actions live here. */}
+        {profile && (
+          <div className="mb-6 flex justify-end">
+            <button
+              type="button"
+              disabled={busy}
+              className={`${button} bg-white`}
+              onClick={() =>
+                void act(async () => {
+                  await memberApi.logout();
+                  sequence.current++;
+                  setProfile(null);
+                  setData(null);
+                  setPage(1);
+                  setEmail('');
+                })
+              }
             >
-              <ArrowLeft size={15} /> Boutique
-            </a>
-            {profile && (
-              <button
-                type="button"
-                disabled={busy}
-                className={`${button} bg-white`}
-                onClick={() =>
-                  void act(async () => {
-                    await memberApi.logout();
-                    sequence.current++;
-                    setProfile(null);
-                    setData(null);
-                    setPage(1);
-                    setEmail('');
-                  })
-                }
-              >
-                <LogOut size={16} /> Déconnexion
-              </button>
-            )}
+              <LogOut size={16} /> Déconnexion
+            </button>
           </div>
-        </header>
+        )}
         <p className="mb-3 text-[10px] font-semibold tracking-[2px] text-[#72767f]">
           VOTRE ESPACE CONNECTA
         </p>
         <h1 className="text-3xl font-semibold tracking-[-1px] sm:text-4xl">
-          {profile ? 'Mes commandes.' : 'Bienvenue chez vous.'}
+          {profile ? 'Mes commandes.' : 'Votre espace client.'}
         </h1>
         <p className="mt-3 text-sm leading-6 text-[#72767f]">
           {profile
             ? profile.email
-            : 'Retrouvez vos commandes et gérez vos réservations, sans mot de passe.'}
+            : 'Consultez vos commandes et leur livraison. Connexion sécurisée, sans mot de passe.'}
         </p>
         {error && (
           <p
@@ -305,10 +296,7 @@ export default function MemberPanel() {
           </section>
         ) : (
           <>
-            <div className="my-7 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-[#72767f]">
-                Actualisation automatique toutes les 15 secondes.
-              </p>
+            <div className="my-7 flex flex-wrap items-center justify-end gap-3">
               <button
                 type="button"
                 disabled={busy}
@@ -329,7 +317,7 @@ export default function MemberPanel() {
                   Aucune commande sur cette page
                 </h2>
                 <a
-                  href="/"
+                  href="/boutique"
                   className={`${button} mt-5 bg-[#235bfa] text-white`}
                 >
                   Découvrir la boutique <ArrowRight size={15} />
@@ -348,10 +336,15 @@ export default function MemberPanel() {
                           {dateFormat.format(new Date(order.createdAt))}
                         </p>
                         <h2 className="mt-2 font-semibold">
-                          {order.items[0].productName}
+                          {displayProductName(order.items[0].productName)}
+                          {order.items.length > 1 && (
+                            <span className="font-normal text-[#72767f]">
+                              {' '}+ {order.items.length - 1} autre{order.items.length > 2 ? 's' : ''} article{order.items.length > 2 ? 's' : ''}
+                            </span>
+                          )}
                         </h2>
                         <p className="mt-1 text-xs text-[#72767f]">
-                          Réservation n°{' '}
+                          {order.paymentStatus === 'PAID' ? 'Commande' : 'Réservation'} n°{' '}
                           {shortReference(order.id)}
                         </p>
                       </div>
@@ -384,12 +377,12 @@ export default function MemberPanel() {
                           className="mt-3 flex justify-between gap-3"
                         >
                           <span>
-                            {item.productName} × {item.quantity}
+                            {displayProductName(item.productName)} × {item.quantity}
                           </span>
                           <strong>{formatPrice(item.lineTotal)}</strong>
                         </div>
                       ))}
-                      <DeliveryDetails order={order} />
+                      <DeliveryDetails order={order} showFulfillment={false} />
                     </details>
                     {order.paymentStatus === 'UNPAID' && (
                       <div className="mt-5 border-t border-[#eff0f3] pt-4">

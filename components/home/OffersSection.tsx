@@ -1,162 +1,129 @@
 'use client';
 
 import { ArrowRight, Check } from 'lucide-react';
+import Link from 'next/link';
 
+import Container from '@/components/layout/Container';
 import { useShop } from '@/components/shop/ShopProvider';
+import { buttonSize, primaryButton } from '@/components/ui/button-styles';
 import { PRODUCTS } from '@/data/products';
+import { getOfferSavings } from '@/lib/product-page';
+import { formatPrice } from '@/lib/shop-pricing';
 
 const product = PRODUCTS.ew75;
 
+/** Duo offer for the lead product. Prices are rendered only once they come from the API. */
 export default function OffersSection() {
-  const {
-    selectedOffer,
-    selectOffer,
-    order,
-    offers: currentOffers,
-  } = useShop();
-  const offers = Object.values(currentOffers);
-  const duoSavings =
-    currentOffers.solo.price * currentOffers.duo.quantity -
-    currentOffers.duo.price;
+  const { selectedOffer, selectOffer, order, offers, product: apiProduct, isSubmitting } = useShop();
+  const pricesReady = apiProduct !== null;
+  const savings = getOfferSavings(offers.solo.price, offers.duo.price, offers.duo.quantity);
+  const current = offers[selectedOffer];
+  const price = (euros: number) => (pricesReady ? formatPrice(Math.round(euros * 100)) : '—');
 
-  const offer = offers.find(
-    (currentOffer) => currentOffer.id === selectedOffer,
-  );
+  if (pricesReady && savings.amount === 0) return null;
 
-  if (!offer) {
-    return null;
-  }
+  const cards = [
+    {
+      id: 'solo' as const,
+      label: 'Solo',
+      detail: `1 paire ${product.name} · ${product.color}`,
+    },
+    {
+      id: 'duo' as const,
+      label: 'Duo',
+      detail: pricesReady
+        ? `2 paires ${product.name} · ${formatPrice(savings.perUnit)} la paire`
+        : `2 paires ${product.name}`,
+    },
+  ];
 
   return (
-    <section id="offres" className="bg-[#f7f8fa] py-16 md:py-24 2xl:py-30">
-      <div className="mx-auto w-full max-w-310 px-5.5 md:px-12 xl:max-w-335 2xl:max-w-375 2xl:px-16">
-        {/* INTRO */}
-        <div className="mb-10 max-w-170 md:mb-14">
-          <span className="text-[9px] font-bold tracking-[1.6px] text-[#7a8089] md:text-[10px]">
-            CHOISISSEZ VOTRE FORMULE
-          </span>
-
-          <h2 className="mt-4 text-[38px] font-medium leading-none tracking-[-2px] md:text-[52px] md:tracking-[-2.8px]">
-            Une paire.
-            <br />
-            Ou deux.
-          </h2>
-
-          <p className="mt-5 max-w-115 text-[11px] leading-[1.8] text-[#747982] md:text-sm">
-            Même expérience. À vous de choisir comment en profiter.
-          </p>
-        </div>
-
-        {/* OFFRES */}
-        <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-          {offers.map((currentOffer) => {
-            const isSelected = selectedOffer === currentOffer.id;
-
-            const isDuo = currentOffer.id === 'duo';
-
-            return (
-              <button
-                key={currentOffer.id}
-                type="button"
-                onClick={() => selectOffer(currentOffer.id)}
-                aria-pressed={isSelected}
-                className={`
-                  group relative min-h-70 overflow-hidden rounded-[22px]
-                  border p-6 text-left transition duration-300
-                  md:min-h-85 md:p-8
-                  ${
-                    isSelected
-                      ? 'border-[#17191d] bg-white shadow-[0_25px_70px_#2029380d]'
-                      : 'border-[#e2e5ea] bg-white/60 hover:-translate-y-1 hover:border-[#bcc2cc] hover:bg-white'
-                  }
-                `}
-              >
-                <div className="flex items-start justify-between gap-6">
-                  <div>
-                    <span className="text-[8px] font-bold tracking-[1.5px] text-[#90969f]">
-                      {isDuo ? 'À PARTAGER' : 'POUR VOUS'}
-                    </span>
-
-                    <h3 className="mt-3 text-[21px] font-semibold tracking-[-0.8px] md:text-[25px]">
-                      {currentOffer.title}
-                    </h3>
-                  </div>
-
-                  <div
-                    className={`
-                      grid size-6 place-items-center rounded-full border
-                      transition
-                      ${
-                        isSelected
-                          ? 'border-[#17191d] bg-[#17191d] text-white'
-                          : 'border-[#cbd0d8]'
-                      }
-                    `}
-                  >
-                    {isSelected && <Check size={13} strokeWidth={2} />}
-                  </div>
-                </div>
-
-                <p className="font-body mt-4 max-w-85 text-[11px] leading-[1.7] text-[#747982] md:text-xs">
-                  {currentOffer.description}
-                </p>
-
-                {isDuo && duoSavings > 0 && (
-                  <span className="mt-5 inline-flex rounded-full bg-[#edf2ff] px-3 py-1.5 text-[8px] font-bold text-[#235bfa]">
-                    {duoSavings} € économisés
-                  </span>
-                )}
-
-                <div className="absolute inset-x-6 bottom-6 flex items-end justify-between gap-5 md:inset-x-8 md:bottom-8">
-                  <span className="text-[9px] leading-5 text-[#9a9fa8]">
-                    {currentOffer.quantity} paire
-                    {currentOffer.quantity > 1 ? 's' : ''}
-                    <br />
-                    {product.name} · {product.color}
-                  </span>
-
-                  <strong className="text-[38px] font-semibold leading-none tracking-[-2px] md:text-[46px]">
-                    {currentOffer.price} €
-                  </strong>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ACTION */}
-        <div className="mt-5 flex flex-col justify-between gap-5 rounded-[18px] bg-[#17191d] px-6 py-5 text-white md:flex-row md:items-center md:px-8 md:py-6">
+    <section id="offres" aria-labelledby="offres-title" className="bg-white py-16 md:py-24">
+      <Container>
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div>
-            <span className="text-[8px] font-bold tracking-[1.5px] text-[#89909d]">
-              VOTRE SÉLECTION
-            </span>
-
-            <div className="mt-1 flex items-center gap-3">
-              <strong className="text-[15px] font-semibold md:text-[17px]">
-                {offer.title}
-              </strong>
-
-              <span className="text-[12px] text-[#8f96a3]">·</span>
-
-              <strong className="text-[15px] font-semibold md:text-[17px]">
-                {offer.price} €
-              </strong>
-            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-[1.6px] text-muted">Offre Duo</p>
+            <h2 id="offres-title" className="mt-2 text-[28px] font-semibold leading-[1.1] tracking-[-1.2px] text-ink md:text-[36px]">
+              Deux paires de Hoco EW75, un prix réduit.
+            </h2>
+            <p className="mt-4 max-w-110 text-[15px] leading-7 text-muted">
+              Pour équiper deux personnes ou garder une paire de rechange. La remise est appliquée
+              automatiquement dans le panier.
+            </p>
+            <Link
+              href="/produit/hoco-ew75"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:text-brand-dark"
+            >
+              Caractéristiques des Hoco EW75 <ArrowRight size={15} aria-hidden />
+            </Link>
           </div>
 
-          <button
-            type="button"
-            onClick={() => order()}
-            className="group flex min-w-55 items-center justify-between gap-8 rounded-full bg-[#235bfa] px-6 py-4 text-xs font-semibold transition hover:bg-white hover:text-[#17191d]"
-          >
-            Commander
-            <ArrowRight
-              size={15}
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </button>
+          <div>
+            <fieldset disabled={!pricesReady || isSubmitting}>
+              <legend className="sr-only">Choisissez votre formule</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {cards.map(({ id, label, detail }) => {
+                  const checked = selectedOffer === id;
+                  return (
+                    <label
+                      key={id}
+                      className={`relative flex cursor-pointer flex-col rounded-3xl border p-5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand md:p-6 ${
+                        checked ? 'border-brand bg-[#f5f7fd]' : 'border-line bg-white hover:border-[#c9d4f5]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="home-offer"
+                        value={id}
+                        checked={checked}
+                        onChange={() => selectOffer(id)}
+                        className="sr-only"
+                      />
+                      <span className="flex items-center justify-between">
+                        <span className={`text-[11px] font-semibold uppercase tracking-[1.2px] ${checked ? 'text-brand' : 'text-muted'}`}>
+                          {label}
+                        </span>
+                        <span
+                          aria-hidden
+                          className={`grid size-5 place-items-center rounded-full border ${checked ? 'border-brand bg-brand text-white' : 'border-[#cbd0d8]'}`}
+                        >
+                          {checked && <Check size={12} strokeWidth={2.5} />}
+                        </span>
+                      </span>
+                      <strong className="mt-4 text-[32px] font-semibold leading-none tracking-[-1.4px] text-ink">
+                        {price(offers[id].price)}
+                      </strong>
+                      <span className="mt-2 text-[13px] text-muted">{detail}</span>
+                      {id === 'duo' && pricesReady && (
+                        <span className="mt-4 self-start rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
+                          {formatPrice(savings.amount)} d’économie
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+
+            <div className="mt-4 flex flex-col gap-4 rounded-3xl bg-ink px-6 py-5 text-white sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-[#b9bec8]">
+                Votre sélection :{' '}
+                <strong className="font-semibold text-white">
+                  {current.title} · {price(current.price)}
+                </strong>
+              </p>
+              <button
+                type="button"
+                onClick={() => order()}
+                disabled={!pricesReady || isSubmitting}
+                className={`${primaryButton} ${buttonSize.lg}`}
+              >
+                Ajouter au panier <ArrowRight size={15} aria-hidden />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </Container>
     </section>
   );
 }
