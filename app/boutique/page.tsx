@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { displayProductName } from '@/lib/product-display';
 import { orderStorefrontProducts } from '@/lib/catalog-display';
 import Container from '@/components/layout/Container';
@@ -25,10 +25,6 @@ export default function CatalogPage() {
             </h1>
             <p className="mt-5 max-w-130 text-sm leading-7 text-[#747982]">
               Des accessoires technologiques simples, utiles et sélectionnés pour vous accompagner au quotidien.
-            </p>
-            <p className="mt-5 inline-flex items-start gap-2 text-xs leading-5 text-[#747982]">
-              <ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#235bfa]" aria-hidden="true" />
-              <span>Mode démonstration : catalogue d’essai et paiements fictifs, sans débit réel.</span>
             </p>
           </div>
         </div>
