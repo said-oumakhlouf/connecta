@@ -13,6 +13,22 @@ export function orderStorefrontProducts<T extends { slug: string }>(products: re
 
 export const LEAD_PRODUCT_SLUG = 'hoco-ew75';
 
+/** Prefer the saved admin description on every catalogue card.
+ * Older Hoco data retains its existing copy until edited in the admin.
+ * Do not invent accessory specifications when their description is empty.
+ */
+export function getProductCardDescription(product: {
+  slug: string;
+  description?: string | null;
+}): string | null {
+  const saved = product.description?.trim();
+  if (saved) return saved;
+  return product.slug === LEAD_PRODUCT_SLUG
+    ? 'Des écouteurs compacts pensés pour vous accompagner au quotidien.'
+    : null;
+}
+
+
 /** Duo is an opt-in offer, not a generic option for catalogue accessories.
  * Keep the lead Hoco eligible even if its Duo is temporarily cleared.
  */
