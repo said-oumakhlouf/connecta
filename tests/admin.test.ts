@@ -273,3 +273,64 @@ test('admin separates available stock from reserved units and rejects invalid re
     await assert.rejects(malformed.products(token), /incomplète/);
   }
 });
+
+
+test('catalogue editor updates product content using authenticated PATCH without changing stock', async () => {
+  const edited = {
+    name: 'Hoco EW75 - photo réelle',
+    price: 3900,
+    duoPrice: 6800,
+    description: 'Description vérifiée',
+    imageUrl: 'https://res.cloudinary.com/connecta/image/upload/v123/hoco.jpg',
+    active: true,
+  };
+  const api = createAdminApi('http://api.test', async (url, options) => {
+    assert.equal(url, 'http://api.test/admin/products/7');
+    assert.equal(options?.method, 'PATCH');
+    assert.equal(new Headers(options?.headers).get('Authorization'), `Bearer ${token}`);
+    assert.equal(options?.cache, 'no-store');
+    assert.deepEqual(JSON.parse(String(options?.body)), edited);
+    return json({ ...product, ...edited });
+  });
+  const saved = await api.updateProduct(token, 7, edited);
+  assert.equal(saved.price, 3900);
+  assert.equal(saved.stock, 20);
+  assert.equal(saved.imageUrl, edited.imageUrl);
+});
+
+test('photo importer uses a short-lived authorized signature and direct Cloudinary upload', async () => {
+  let calls = 0;
+  const signed = {
+    cloudName: 'connecta', apiKey: 'test-public',
+    folder: 'connecta/products', timestamp: 1792200000,
+    signature: 'a'.repeat(40),
+  };
+  const imageUrl = 'https://res.cloudinary.com/connecta/image/upload/v123/photo.webp';
+  const api = createAdminApi('http://api.test', async (url, options) => {
+    calls++;
+    if (calls === 1) {
+      assert.equal(url, 'http://api.test/admin/uploads/cloudinary-signature');
+      assert.equal(options?.method, 'GET');
+      assert.equal(new Headers(options?.headers).get('Authorization'), `Bearer ${token}`);
+      return json(signed);
+    }
+    assert.equal(url, 'https://api.cloudinary.com/v1_1/connecta/image/upload');
+    assert.equal(options?.method, 'POST');
+    assert.ok(options?.body instanceof FormData);
+    const form = options?.body as FormData;
+    assert.equal(form.get('api_key'), signed.apiKey);
+    assert.equal(form.get('signature'), signed.signature);
+    assert.equal(form.get('folder'), signed.folder);
+    return json({ secure_url: imageUrl });
+  });
+  const url = await api.uploadProductPhoto(token, new File(['picture'], 'photo.webp', { type: 'image/webp' }));
+  assert.equal(url, imageUrl);
+  assert.equal(calls, 2);
+});
+
+test('photo importer refuses unexpected file formats before contacting backend', async () => {
+  let calls = 0;
+  const api = createAdminApi('http://api.test', async () => { calls++; return json({}); });
+  await assert.rejects(api.uploadProductPhoto(token, new File(['unsafe'], 'file.svg', { type: 'image/svg+xml' })), /JPG/);
+  assert.equal(calls, 0);
+});

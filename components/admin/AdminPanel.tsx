@@ -25,6 +25,7 @@ import {
   adminApi,
   AdminApiError,
   type AdminOrders,
+  type ProductEdit,
   type AdminProduct,
   type AdminSession,
   type AdminAnalytics,
@@ -226,6 +227,42 @@ export default function AdminPanel() {
     } finally {
       submitting.current = false;
       setPendingId(null);
+    }
+  }
+
+  async function saveProduct(productId: number, update: ProductEdit): Promise<boolean> {
+    if (!session || submitting.current || loading) return false;
+    submitting.current = true;
+    requestSequence.current++;
+    setPendingId(productId);
+    setError('');
+    setSuccess('');
+    const credential = session.token;
+    try {
+      const result = await adminApi.updateProduct(credential, productId, update);
+      if (credential !== activeToken.current) return false;
+      setProducts(current => current?.map(item =>
+        item.id === productId ? { ...result, reservedUnits: item.reservedUnits } : item,
+      ) ?? null);
+      setSuccess('La fiche produit a été mise à jour.');
+      return true;
+    } catch (problem) {
+      if (credential === activeToken.current) reportError(problem);
+      return false;
+    } finally {
+      submitting.current = false;
+      setPendingId(null);
+    }
+  }
+
+  async function uploadProductPhoto(file: File): Promise<string | null> {
+    if (!session || submitting.current || loading) return null;
+    setError('');
+    try {
+      return await adminApi.uploadProductPhoto(session.token, file);
+    } catch (problem) {
+      reportError(problem);
+      return null;
     }
   }
 
@@ -497,6 +534,8 @@ export default function AdminPanel() {
             blocked={blocked}
             pendingId={pendingId}
             onRestock={restock}
+            onSave={saveProduct}
+            onUpload={uploadProductPhoto}
           />
         )}
       </main>

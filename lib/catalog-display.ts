@@ -1,3 +1,5 @@
+import { PRODUCTS } from '../data/products';
+
 /** Places the current lead product first without changing catalogue or checkout data.
  * Stable sorting keeps future products in their backend-defined relative order.
  */
@@ -13,6 +15,29 @@ export function orderStorefrontProducts<T extends { slug: string }>(products: re
 
 export const LEAD_PRODUCT_SLUG = 'hoco-ew75';
 
+/** Prefer the saved admin description on every catalogue card.
+ * Older Hoco data retains its existing copy until edited in the admin.
+ * Do not invent accessory specifications when their description is empty.
+ */
+export function getProductCardDescription(product: {
+  slug: string;
+  description?: string | null;
+}): string | null {
+  const saved = product.description?.trim();
+  if (saved) return saved;
+  return product.slug === LEAD_PRODUCT_SLUG
+    ? PRODUCTS.ew75.description
+    : null;
+}
+
+
+/** Duo is an opt-in offer, not a generic option for catalogue accessories.
+ * Keep the lead Hoco eligible even if its Duo is temporarily cleared.
+ */
+export function canEditDuoOffer(product: { slug: string; duoPrice: number | null }): boolean {
+  return product.slug === LEAD_PRODUCT_SLUG || product.duoPrice !== null;
+}
+
 export type ProductVisual = {
   src: string;
   alt: string;
@@ -27,7 +52,10 @@ export type ProductVisual = {
  * Prices, stock and availability always come from the API product.
  * Every visual is an illustration until authentic product photos are supplied.
  */
-export function getProductVisual(slug: string): ProductVisual {
+export function getProductVisual(slug: string, imageUrl?: string | null, name?: string): ProductVisual {
+  if (imageUrl && /^https:\/\/res\.cloudinary\.com\/[a-zA-Z0-9_-]+\/image\/upload\//.test(imageUrl)) {
+    return { src: imageUrl, alt: name ? `Photo de ${name}` : 'Photo du produit', width: 800, height: 800, padded: true };
+  }
   if (slug === LEAD_PRODUCT_SLUG)
     return {
       src: '/images/hoco-ew75-features-800.webp',

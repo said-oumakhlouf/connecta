@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import {
   PRODUCT_GALLERY,
@@ -11,11 +11,22 @@ import {
 
 const SIZES = '(min-width: 1024px) 56vw, 100vw';
 
-export default function ProductGallery() {
+export default function ProductGallery({ imageUrl, name }: { imageUrl?: string | null; name?: string }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef(0);
   const [active, setActive] = useState(0);
-  const count = PRODUCT_GALLERY.length;
+  const slides = [
+    ...(imageUrl ? [{
+      id: 'catalog-photo', caption: 'Photo réelle du produit', src: imageUrl, srcSet: undefined,
+      width: 800, height: 800, alt: name ? `Photo de ${name}` : 'Photo du produit',
+      fit: 'contain' as const, position: undefined,
+    }] : []),
+    ...PRODUCT_GALLERY.map(image => ({
+      ...image, src: galleryImageSrc(image), srcSet: galleryImageSrcSet(image),
+    })),
+  ];
+  const count = slides.length;
+  useEffect(() => { setActive(0); trackRef.current?.scrollTo({ left: 0, behavior: 'auto' }); }, [imageUrl]);
 
   const goTo = useCallback(
     (index: number) => {
@@ -58,7 +69,7 @@ export default function ProductGallery() {
           aria-label="Photos du Hoco EW75 (flèches gauche et droite pour naviguer)"
           className="flex aspect-[4/3] snap-x snap-mandatory overflow-x-auto overscroll-x-contain outline-none [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-[#235bfa] focus-visible:ring-inset [&::-webkit-scrollbar]:hidden"
         >
-          {PRODUCT_GALLERY.map((image, index) => (
+          {slides.map((image, index) => (
             <figure
               key={image.id}
               aria-roledescription="diapositive"
@@ -69,8 +80,8 @@ export default function ProductGallery() {
               {/* Static export: images are pre-optimised WebP variants, so a native srcset is used. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={galleryImageSrc(image)}
-                srcSet={galleryImageSrcSet(image)}
+                src={image.src}
+                srcSet={image.srcSet}
                 sizes={SIZES}
                 width={image.width}
                 height={image.height}
@@ -90,7 +101,7 @@ export default function ProductGallery() {
           aria-live="polite"
           className="pointer-events-none absolute top-4 left-4 rounded-full bg-white/85 px-3 py-1.5 text-[10px] font-semibold tracking-[0.6px] text-[#17191d] backdrop-blur-md"
         >
-          {active + 1} / {count} · {PRODUCT_GALLERY[active].caption}
+          {active + 1} / {count} · {slides[active]?.caption}
         </span>
 
         {[
@@ -109,7 +120,7 @@ export default function ProductGallery() {
         ))}
 
         <div className="absolute inset-x-0 bottom-4 flex justify-center gap-1.5 sm:hidden" aria-hidden>
-          {PRODUCT_GALLERY.map((image, index) => (
+          {slides.map((image, index) => (
             <span
               key={image.id}
               className={`h-1.5 rounded-full transition-all duration-300 ${index === active ? 'w-5 bg-[#17191d]' : 'w-1.5 bg-[#17191d]/25'}`}
@@ -119,7 +130,7 @@ export default function ProductGallery() {
       </div>
 
       <div className="hidden grid-cols-5 gap-3 sm:grid">
-        {PRODUCT_GALLERY.map((image, index) => (
+        {slides.map((image, index) => (
           <button
             key={image.id}
             type="button"
@@ -130,7 +141,7 @@ export default function ProductGallery() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={galleryImageSrc(image)}
+              src={image.src}
               alt=""
               width={image.width}
               height={image.height}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
+import { canEditDuoOffer, getProductCardDescription, getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
 
 test('lead product appears before complementary accessories', () => {
   const original = [
@@ -28,4 +28,32 @@ test('storefront presentation is keyed by slug and never carries prices', () => 
   assert.equal(getProductHref('connecta-cable-test'), null);
   for (const slug of ['hoco-ew75', 'connecta-cable-test', 'autre'])
     assert.ok(!('price' in getProductVisual(slug)));
+});
+
+
+test('hosted photo from admin takes precedence over illustrations', () => {
+  const url = 'https://res.cloudinary.com/connecta/image/upload/v123/cable.webp';
+  const visual = getProductVisual('connecta-cable-test', url, 'Câble USB-C');
+  assert.equal(visual.src, url);
+  assert.equal(visual.alt, 'Photo de Câble USB-C');
+  assert.doesNotMatch(visual.alt, /illustration/i);
+  assert.match(getProductVisual('connecta-cable-test', 'https://example.com/tracker.svg').src, /cable-demo/);
+});
+
+
+test('Duo editor appears for Hoco or an existing Duo offer, never for accessories', () => {
+  assert.equal(canEditDuoOffer({ slug: 'connecta-cable-usb-c-test', duoPrice: null }), false);
+  assert.equal(canEditDuoOffer({ slug: 'connecta-chargeur-20w-test', duoPrice: null }), false);
+  assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: 6000 }), true);
+  assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: null }), true);
+  assert.equal(canEditDuoOffer({ slug: 'autre-produit', duoPrice: 7000 }), true);
+});
+
+test('product cards display saved admin descriptions without inventing accessory text', () => {
+  const cable = { slug: 'connecta-cable-usb-c-test', description: '  Câble USB-C testé par CONNECTA.  ' };
+  assert.equal(getProductCardDescription(cable), 'Câble USB-C testé par CONNECTA.');
+  assert.equal(getProductCardDescription({ slug: 'connecta-chargeur-20w-test', description: null }), null);
+  assert.equal(getProductCardDescription({ slug: 'connecta-cable-usb-c-test', description: '   ' }), null);
+  assert.equal(getProductCardDescription({ slug: 'hoco-ew75', description: 'Nouvelle description' }), 'Nouvelle description');
+  assert.match(getProductCardDescription({ slug: 'hoco-ew75', description: null }) ?? '', /écouteurs/i);
 });

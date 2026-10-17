@@ -59,8 +59,7 @@ function FeaturedProduct({ item }: { item: ApiProduct }) {
           </Link>
         </h3>
         <p className="mt-2 text-sm leading-6 text-muted">
-          Bluetooth {lead.bluetoothVersion} · jusqu’à {lead.musicTime} d’écoute · portée jusqu’à{' '}
-          {lead.range} · boîtier de recharge.
+          {item.description || (<>Bluetooth {lead.bluetoothVersion} · jusqu’à {lead.musicTime} d’écoute · portée jusqu’à {lead.range} · boîtier de recharge.</>)}
         </p>
 
         <div className="mt-5 flex items-end justify-between gap-3">

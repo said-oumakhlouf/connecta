@@ -7,6 +7,8 @@ export type ApiProduct = {
   slug: string;
   price: number;
   duoPrice: number | null;
+  description?: string | null;
+  imageUrl?: string | null;
   stock: number;
   active: boolean;
 };
@@ -151,6 +153,9 @@ export function isProduct(value: unknown): value is ApiProduct {
     typeof value.slug === 'string' &&
     isAmount(value.price) &&
     (value.duoPrice === null || isAmount(value.duoPrice)) &&
+    (value.description === undefined || value.description === null || typeof value.description === 'string') &&
+    (value.imageUrl === undefined || value.imageUrl === null ||
+      (typeof value.imageUrl === 'string' && /^https:\/\/res\.cloudinary\.com\//.test(value.imageUrl))) &&
     isAmount(value.stock) &&
     typeof value.active === 'boolean'
   );

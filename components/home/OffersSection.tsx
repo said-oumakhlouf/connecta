@@ -16,6 +16,7 @@ const product = PRODUCTS.ew75;
 export default function OffersSection() {
   const { selectedOffer, selectOffer, order, offers, product: apiProduct, isSubmitting } = useShop();
   const pricesReady = apiProduct !== null;
+  const displayName = apiProduct?.name ?? product.name;
   const savings = getOfferSavings(offers.solo.price, offers.duo.price, offers.duo.quantity);
   const current = offers[selectedOffer];
   const price = (euros: number) => (pricesReady ? formatPrice(Math.round(euros * 100)) : '—');
@@ -26,14 +27,14 @@ export default function OffersSection() {
     {
       id: 'solo' as const,
       label: 'Solo',
-      detail: `1 paire ${product.name} · ${product.color}`,
+      detail: `1 paire ${displayName} · ${product.color}`,
     },
     {
       id: 'duo' as const,
       label: 'Duo',
       detail: pricesReady
-        ? `2 paires ${product.name} · ${formatPrice(savings.perUnit)} la paire`
-        : `2 paires ${product.name}`,
+        ? `2 paires ${displayName} · ${formatPrice(savings.perUnit)} la paire`
+        : `2 paires ${displayName}`,
     },
   ];
 
