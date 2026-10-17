@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
+import { canEditDuoOffer, getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
 
 test('lead product appears before complementary accessories', () => {
   const original = [
@@ -38,4 +38,13 @@ test('hosted photo from admin takes precedence over illustrations', () => {
   assert.equal(visual.alt, 'Photo de Câble USB-C');
   assert.doesNotMatch(visual.alt, /illustration/i);
   assert.match(getProductVisual('connecta-cable-test', 'https://example.com/tracker.svg').src, /cable-demo/);
+});
+
+
+test('Duo editor appears for Hoco or an existing Duo offer, never for accessories', () => {
+  assert.equal(canEditDuoOffer({ slug: 'connecta-cable-usb-c-test', duoPrice: null }), false);
+  assert.equal(canEditDuoOffer({ slug: 'connecta-chargeur-20w-test', duoPrice: null }), false);
+  assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: 6000 }), true);
+  assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: null }), true);
+  assert.equal(canEditDuoOffer({ slug: 'autre-produit', duoPrice: 7000 }), true);
 });
