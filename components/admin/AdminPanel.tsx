@@ -230,6 +230,31 @@ export default function AdminPanel() {
     }
   }
 
+  async function saveProduct(productId: number, update: ProductEdit): Promise<boolean> {
+    if (!session || submitting.current || loading) return false;
+    submitting.current = true;
+    requestSequence.current++;
+    setPendingId(productId);
+    setError('');
+    setSuccess('');
+    const credential = session.token;
+    try {
+      const result = await adminApi.updateProduct(credential, productId, update);
+      if (credential !== activeToken.current) return false;
+      setProducts(current => current?.map(item =>
+        item.id === productId ? { ...result, reservedUnits: item.reservedUnits } : item,
+      ) ?? null);
+      setSuccess('La fiche produit a été mise à jour.');
+      return true;
+    } catch (problem) {
+      if (credential === activeToken.current) reportError(problem);
+      return false;
+    } finally {
+      submitting.current = false;
+      setPendingId(null);
+    }
+  }
+
   async function updateOrderStatus(
     orderId: string,
     status: 'CONFIRMED' | 'CANCELLED',
