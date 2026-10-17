@@ -143,13 +143,13 @@ export default function ProductPage() {
             <li>Écouteurs sans fil</li>
             <li aria-hidden>/</li>
             <li aria-current="page" className="font-semibold text-[#17191d]">
-              {product.name}
+              {apiProduct?.name ?? product.name}
             </li>
           </ol>
         </nav>
 
         <section className="grid items-start gap-9 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 2xl:gap-24">
-          <ProductGallery />
+          <ProductGallery imageUrl={apiProduct?.imageUrl} name={apiProduct?.name ?? product.name} />
 
           <div className="flex max-w-130 flex-col lg:py-6">
             <span className="text-[9px] font-bold tracking-[1.6px] text-[#747983] md:text-[10px]">
@@ -157,11 +157,11 @@ export default function ProductPage() {
             </span>
 
             <h1 className="my-4 text-[46px] font-semibold leading-[0.95] tracking-[-2.6px] md:text-[64px] md:tracking-[-3.5px] 2xl:text-[82px]">
-              {product.name}
+              {apiProduct?.name ?? product.name}
             </h1>
 
             <p className="max-w-112.5 text-[12px] leading-7 text-[#72767f] md:text-sm 2xl:text-base">
-              {product.description}
+              {apiProduct?.description || product.description}
             </p>
 
             <ul className="mt-6 grid grid-cols-4 gap-2" aria-label="Points clés">
@@ -277,7 +277,7 @@ export default function ProductPage() {
 
           <details open className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-5 border-b border-[#e9eaed] pb-4 text-[12px] font-semibold marker:hidden 2xl:text-sm">
-              Caractéristiques du {product.name}
+              Caractéristiques du {apiProduct?.name ?? product.name}
               <ChevronDown size={18} className="shrink-0 text-[#858b96] transition-transform duration-200 group-open:rotate-180" aria-hidden />
             </summary>
             <dl className="m-0">
