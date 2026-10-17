@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canEditDuoOffer, getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
+import { canEditDuoOffer, getProductCardDescription, getProductCategory, getProductHref, getProductVisual, orderStorefrontProducts } from '../lib/catalog-display';
 
 test('lead product appears before complementary accessories', () => {
   const original = [
@@ -47,4 +47,13 @@ test('Duo editor appears for Hoco or an existing Duo offer, never for accessorie
   assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: 6000 }), true);
   assert.equal(canEditDuoOffer({ slug: 'hoco-ew75', duoPrice: null }), true);
   assert.equal(canEditDuoOffer({ slug: 'autre-produit', duoPrice: 7000 }), true);
+});
+
+test('product cards display saved admin descriptions without inventing accessory text', () => {
+  const cable = { slug: 'connecta-cable-usb-c-test', description: '  Câble USB-C testé par CONNECTA.  ' };
+  assert.equal(getProductCardDescription(cable), 'Câble USB-C testé par CONNECTA.');
+  assert.equal(getProductCardDescription({ slug: 'connecta-chargeur-20w-test', description: null }), null);
+  assert.equal(getProductCardDescription({ slug: 'connecta-cable-usb-c-test', description: '   ' }), null);
+  assert.equal(getProductCardDescription({ slug: 'hoco-ew75', description: 'Nouvelle description' }), 'Nouvelle description');
+  assert.match(getProductCardDescription({ slug: 'hoco-ew75', description: null }) ?? '', /écouteurs/i);
 });
