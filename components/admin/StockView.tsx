@@ -3,7 +3,7 @@
 import { Boxes, LoaderCircle, Pencil, Plus, Save, Upload, X } from 'lucide-react';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import type { AdminProduct, ProductEdit } from '@/lib/admin-api';
-import { getProductVisual } from '@/lib/catalog-display';
+import { canEditDuoOffer, getProductVisual } from '@/lib/catalog-display';
 import { formatPrice } from '@/lib/shop-pricing';
 import styles from './AdminPanel.module.css';
 
@@ -26,6 +26,7 @@ function ProductEditor({
 }) {
   const [name, setName] = useState(product.name);
   const [price, setPrice] = useState((product.price / 100).toFixed(2));
+  const showDuo = canEditDuoOffer(product);
   const [duoPrice, setDuoPrice] = useState(product.duoPrice === null ? '' : (product.duoPrice / 100).toFixed(2));
   const [description, setDescription] = useState(product.description ?? '');
   const [active, setActive] = useState(product.active);
@@ -53,18 +54,19 @@ function ProductEditor({
     event.preventDefault();
     if (uploading || blocked) return;
     const priceCents = centsFromInput(price);
-    const duoCents = duoPrice.trim() ? centsFromInput(duoPrice) : null;
-    if (!name.trim() || !priceCents || (duoPrice.trim() && !duoCents)) {
+    const duoCents = showDuo && duoPrice.trim() ? centsFromInput(duoPrice) : null;
+    if (!name.trim() || !priceCents || (showDuo && duoPrice.trim() && !duoCents)) {
       setLocalError('Vérifiez le nom et les montants en euros (ex. 35,00).');
       return;
     }
-    if (duoCents !== null && duoCents > priceCents * 2) {
+    if (showDuo && duoCents !== null && duoCents > priceCents * 2) {
       setLocalError('Le Duo ne peut pas coûter plus de deux produits.');
       return;
     }
     setLocalError('');
     const updated = await onSave(product.id, {
-      name: name.trim(), price: priceCents, duoPrice: duoCents,
+      name: name.trim(), price: priceCents,
+      ...(showDuo ? { duoPrice: duoCents } : {}),
       description: description.trim() || null, imageUrl, active,
     });
     if (updated) onClose();
@@ -104,15 +106,17 @@ function ProductEditor({
         <input className={field} value={name} onChange={event => setName(event.target.value)}
           minLength={2} maxLength={150} required disabled={blocked || uploading} />
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={`grid gap-3 ${showDuo ? "grid-cols-2" : "grid-cols-1"}`}>
         <label className="block text-xs font-semibold">Prix en €
           <input className={field} value={price} onChange={event => setPrice(event.target.value)}
             inputMode="decimal" required disabled={blocked || uploading} />
         </label>
-        <label className="block text-xs font-semibold">Duo en €
-          <input className={field} value={duoPrice} onChange={event => setDuoPrice(event.target.value)}
-            inputMode="decimal" placeholder="Aucun Duo" disabled={blocked || uploading} />
-        </label>
+        {showDuo && (
+          <label className="block text-xs font-semibold">Duo en €
+            <input className={field} value={duoPrice} onChange={event => setDuoPrice(event.target.value)}
+              inputMode="decimal" placeholder="Aucun Duo" disabled={blocked || uploading} />
+          </label>
+        )}
       </div>
       <label className="block text-xs font-semibold">Description du produit
         <textarea className={field} rows={4} value={description} maxLength={2000}
