@@ -13,6 +13,13 @@ export function orderStorefrontProducts<T extends { slug: string }>(products: re
 
 export const LEAD_PRODUCT_SLUG = 'hoco-ew75';
 
+/** Duo is an opt-in offer, not a generic option for catalogue accessories.
+ * Keep the lead Hoco eligible even if its Duo is temporarily cleared.
+ */
+export function canEditDuoOffer(product: { slug: string; duoPrice: number | null }): boolean {
+  return product.slug === LEAD_PRODUCT_SLUG || product.duoPrice !== null;
+}
+
 export type ProductVisual = {
   src: string;
   alt: string;
