@@ -29,3 +29,13 @@ test('storefront presentation is keyed by slug and never carries prices', () => 
   for (const slug of ['hoco-ew75', 'connecta-cable-test', 'autre'])
     assert.ok(!('price' in getProductVisual(slug)));
 });
+
+
+test('hosted photo from admin takes precedence over illustrations', () => {
+  const url = 'https://res.cloudinary.com/connecta/image/upload/v123/cable.webp';
+  const visual = getProductVisual('connecta-cable-test', url, 'Câble USB-C');
+  assert.equal(visual.src, url);
+  assert.equal(visual.alt, 'Photo de Câble USB-C');
+  assert.doesNotMatch(visual.alt, /illustration/i);
+  assert.match(getProductVisual('connecta-cable-test', 'https://example.com/tracker.svg').src, /cable-demo/);
+});
