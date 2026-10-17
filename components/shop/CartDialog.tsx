@@ -177,7 +177,7 @@ export default function CartDialog() {
                     <div className="flex items-center gap-3">
                       <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-white text-[#235bfa]">
                         {item ? (
-                          <Image src={getProductVisual(item.slug).src} alt="" width={80} height={80}
+                          <Image src={getProductVisual(item.slug, item.imageUrl, item.name).src} alt="" width={80} height={80}
                             className={`h-full w-full object-contain ${getProductVisual(item.slug).padded ? 'p-1' : ''}`} />
                         ) : null}
                       </div>
