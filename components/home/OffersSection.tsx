@@ -26,14 +26,14 @@ export default function OffersSection() {
     {
       id: 'solo' as const,
       label: 'Solo',
-      detail: `1 paire ${product.name} · ${product.color}`,
+      detail: `1 paire ${apiProduct?.name ?? product.name} · ${product.color}`,
     },
     {
       id: 'duo' as const,
       label: 'Duo',
       detail: pricesReady
-        ? `2 paires ${product.name} · ${formatPrice(savings.perUnit)} la paire`
-        : `2 paires ${product.name}`,
+        ? `2 paires ${apiProduct?.name ?? product.name} · ${formatPrice(savings.perUnit)} la paire`
+        : `2 paires ${apiProduct?.name ?? product.name}`,
     },
   ];
 
