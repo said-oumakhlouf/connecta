@@ -6,7 +6,7 @@ export type AdminProduct = ApiProduct & { reservedUnits: number };
 export type ProductEdit = {
   name: string;
   price: number;
-  duoPrice: number | null;
+  duoPrice?: number | null;
   description: string | null;
   imageUrl: string | null;
   active: boolean;
