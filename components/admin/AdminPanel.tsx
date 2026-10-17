@@ -25,6 +25,7 @@ import {
   adminApi,
   AdminApiError,
   type AdminOrders,
+  type ProductEdit,
   type AdminProduct,
   type AdminSession,
   type AdminAnalytics,
