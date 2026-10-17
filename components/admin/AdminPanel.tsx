@@ -255,6 +255,17 @@ export default function AdminPanel() {
     }
   }
 
+  async function uploadProductPhoto(file: File): Promise<string | null> {
+    if (!session || submitting.current || loading) return null;
+    setError('');
+    try {
+      return await adminApi.uploadProductPhoto(session.token, file);
+    } catch (problem) {
+      reportError(problem);
+      return null;
+    }
+  }
+
   async function updateOrderStatus(
     orderId: string,
     status: 'CONFIRMED' | 'CANCELLED',
@@ -523,6 +534,8 @@ export default function AdminPanel() {
             blocked={blocked}
             pendingId={pendingId}
             onRestock={restock}
+            onSave={saveProduct}
+            onUpload={uploadProductPhoto}
           />
         )}
       </main>
