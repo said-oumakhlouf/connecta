@@ -28,7 +28,7 @@ export function useCatalogItem(item: ApiProduct) {
   return {
     name: displayProductName(item.name),
     category: getProductCategory(item.slug),
-    visual: getProductVisual(item.slug),
+    visual: getProductVisual(item.slug, item.imageUrl, item.name),
     href: getProductHref(item.slug),
     duoSavings,
     soldOut,
