@@ -3,6 +3,16 @@ import { API_BASE_URL } from './api-config';
 import { isProduct, type ApiProduct, type ApiOrder } from './shop-api';
 
 export type AdminProduct = ApiProduct & { reservedUnits: number };
+export type ProductEdit = {
+  name: string;
+  price: number;
+  duoPrice: number | null;
+  description: string | null;
+  imageUrl: string | null;
+  active: boolean;
+};
+
+type CloudinaryUploadSignature = { cloudName: string; apiKey: string; folder: string; timestamp: number; signature: string };
 
 export type AdminSession = { token: string; expiresAt: string };
 export type AdminOrder = Omit<ApiOrder, 'status' | 'items'> & ShippingOrder & {
@@ -270,6 +280,49 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
         method: 'POST', headers: { ...auth(token), 'Content-Type': 'application/json' },
         body: JSON.stringify(update),
       }, isOrder),
+    updateProduct: (token: string, productId: number, update: ProductEdit) =>
+      request(
+        `/admin/products/${productId}`,
+        { method: 'PATCH', headers: { ...auth(token), 'Content-Type': 'application/json' }, body: JSON.stringify(update) },
+        isProduct,
+      ),
+    uploadProductPhoto: async (token: string, file: File): Promise<string> => {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+        throw new AdminApiError('Choisissez une photo JPG, PNG ou WebP.', 400);
+      if (file.size > 5 * 1024 * 1024)
+        throw new AdminApiError('La photo ne doit pas dépasser 5 Mo.', 400);
+      const signed = await request<CloudinaryUploadSignature>(
+        '/admin/uploads/cloudinary-signature',
+        { method: 'GET', headers: auth(token) },
+        (value): value is CloudinaryUploadSignature =>
+          record(value) && typeof value.cloudName === 'string' && /^[a-zA-Z0-9_-]+$/.test(value.cloudName) &&
+          typeof value.apiKey === 'string' && typeof value.folder === 'string' &&
+          integer(value.timestamp) && typeof value.signature === 'string' && /^[a-f0-9]{40}$/.test(value.signature),
+      );
+      const form = new FormData();
+      form.set('file', file);
+      form.set('api_key', signed.apiKey);
+      form.set('timestamp', String(signed.timestamp));
+      form.set('folder', signed.folder);
+      form.set('signature', signed.signature);
+      const abort = new AbortController();
+      const timeout = setTimeout(() => abort.abort(), 30000);
+      try {
+        const response = await fetcher(`https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
+          { method: 'POST', body: form, signal: abort.signal });
+        if (!response.ok) throw new AdminApiError('Échec de l’import de la photo. Réessayez.', response.status);
+        const result: unknown = await response.json();
+        if (!record(result) || typeof result.secure_url !== 'string' ||
+          !result.secure_url.startsWith(`https://res.cloudinary.com/${signed.cloudName}/image/upload/`))
+          throw new AdminApiError('La réponse du stockage est invalide.', 0);
+        return result.secure_url;
+      } catch (error) {
+        if (error instanceof AdminApiError) throw error;
+        throw new AdminApiError('Impossible d’importer la photo. Vérifiez votre connexion.', 0);
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
     restock: (token: string, productId: number, quantity: number) =>
       request(
         `/admin/products/${productId}/restock`,
