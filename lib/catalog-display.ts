@@ -1,3 +1,5 @@
+import { PRODUCTS } from '../data/products';
+
 /** Places the current lead product first without changing catalogue or checkout data.
  * Stable sorting keeps future products in their backend-defined relative order.
  */
@@ -24,7 +26,7 @@ export function getProductCardDescription(product: {
   const saved = product.description?.trim();
   if (saved) return saved;
   return product.slug === LEAD_PRODUCT_SLUG
-    ? 'Des écouteurs compacts pensés pour vous accompagner au quotidien.'
+    ? PRODUCTS.ew75.description
     : null;
 }
 
