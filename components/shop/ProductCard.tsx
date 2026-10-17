@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 
 import { buttonSize, primaryButton } from '@/components/ui/button-styles';
 import { useShop } from '@/components/shop/ShopProvider';
-import { getProductCategory, getProductHref, getProductVisual } from '@/lib/catalog-display';
+import { getProductCardDescription, getProductCategory, getProductHref, getProductVisual } from '@/lib/catalog-display';
 import { getCartStockAvailability } from '@/lib/multi-cart';
 import { displayProductName } from '@/lib/product-display';
 import { formatPrice } from '@/lib/shop-pricing';
@@ -28,6 +28,7 @@ export function useCatalogItem(item: ApiProduct) {
   return {
     name: displayProductName(item.name),
     category: getProductCategory(item.slug),
+    description: getProductCardDescription(item),
     visual: getProductVisual(item.slug, item.imageUrl, item.name),
     href: getProductHref(item.slug),
     duoSavings,
@@ -102,7 +103,10 @@ export default function ProductCard({ item, layout = 'grid', headingLevel: Headi
         <div className="flex min-w-0 flex-1 flex-col">
           <p className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">{product.category}</p>
           <Heading className="mt-1 text-base font-semibold tracking-[-0.3px] text-ink">{title}</Heading>
-          <div className="mt-1">
+          {product.description && (
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{product.description}</p>
+          )}
+          <div className="mt-2">
             <StockStatus status={product.status} soldOut={product.soldOut} inCart={product.inCart} />
           </div>
           <div className="mt-auto flex items-center justify-between gap-3 pt-3">
@@ -127,6 +131,9 @@ export default function ProductCard({ item, layout = 'grid', headingLevel: Headi
       <div className="flex flex-1 flex-col p-6">
         <p className="text-[11px] font-semibold uppercase tracking-[1.2px] text-muted">{product.category}</p>
         <Heading className="mt-2 text-xl font-semibold tracking-[-0.6px] text-ink">{title}</Heading>
+        {product.description && (
+          <p className="mt-2 line-clamp-3 text-[13px] leading-5 text-muted">{product.description}</p>
+        )}
         {product.duoSavings > 0 && item.duoPrice != null && (
           <p className="mt-2 text-[13px] font-semibold text-brand">
             Offre Duo · 2 pour {formatPrice(item.duoPrice)} · {formatPrice(product.duoSavings)} d’économie
