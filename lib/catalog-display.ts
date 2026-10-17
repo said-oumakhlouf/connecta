@@ -27,7 +27,10 @@ export type ProductVisual = {
  * Prices, stock and availability always come from the API product.
  * Every visual is an illustration until authentic product photos are supplied.
  */
-export function getProductVisual(slug: string): ProductVisual {
+export function getProductVisual(slug: string, imageUrl?: string | null, name?: string): ProductVisual {
+  if (imageUrl && /^https:\/\/res\.cloudinary\.com\/[a-zA-Z0-9_-]+\/image\/upload\//.test(imageUrl)) {
+    return { src: imageUrl, alt: name ? `Photo de ${name}` : 'Photo du produit', width: 800, height: 800, padded: true };
+  }
   if (slug === LEAD_PRODUCT_SLUG)
     return {
       src: '/images/hoco-ew75-features-800.webp',
