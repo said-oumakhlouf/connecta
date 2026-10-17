@@ -194,7 +194,9 @@ export function createAdminApi(baseUrl: string, fetcher: typeof fetch = fetch) {
       );
       if (!response.ok)
         throw new AdminApiError(
-          messages[response.status] ?? 'L’API est momentanément indisponible.',
+          path === '/admin/uploads/cloudinary-signature' && response.status === 503
+            ? 'Le stockage des photos doit être configuré dans le backend (Cloudinary).'
+            : messages[response.status] ?? 'L’API est momentanément indisponible.',
           response.status,
         );
       const value: unknown =
